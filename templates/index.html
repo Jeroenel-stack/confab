@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSIRIS Command Center</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg-color: #12141d;
+        --sidebar-bg: #1a1c23;
+        --card-bg: #1e1e2d;
+        --text-main: #e2e8f0;
+        --text-muted: #94a3b8;
+        --accent-blue: #3b82f6;
+        --accent-green: #10b981;
+        --accent-red: #ef4444;
+        --accent-warning: #f59e0b;
+        --border-color: #2d3748;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        margin: 0;
+        padding: 0;
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* SIDEBAR */
+      .sidebar {
+        width: 260px;
+        flex-shrink: 0;
+        background-color: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        transition: width 0.3s ease;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .sidebar.collapsed {
+        width: 80px;
+      }
+      .sidebar.collapsed .hide-on-collapse {
+        display: none;
+      }
+
+      .sidebar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .sidebar-brand {
+        font-size: 20px;
+        font-weight: bold;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .nav-item {
+        padding: 12px 15px;
+        margin-bottom: 5px;
+        border-radius: 8px;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        text-decoration: none;
+      }
+      .sidebar.collapsed .nav-item {
+        justify-content: center;
+        padding: 12px 0;
+      }
+      .sidebar.collapsed .btn-danger {
+        justify-content: center !important;
+        padding: 12px 0;
+      }
+      .nav-item:hover,
+      .nav-item.active {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: var(--accent-blue);
+      }
+
+      .toggle-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 5px;
+        display: flex;
+      }
+      .toggle-btn:hover {
+        color: #fff;
+      }
+
+      .main-content {
+        flex-grow: 1;
+        padding: 30px;
+        overflow-y: auto;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+      }
+      .search-bar {
+        background: var(--sidebar-bg);
+        border: 1px solid var(--border-color);
+        padding: 10px 20px;
+        border-radius: 20px;
+        color: var(--text-main);
+        width: 300px;
+      }
+      .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      /* GRIDS & CARDS */
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 20px;
+      }
+      .card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .col-12 {
+        grid-column: span 12;
+      }
+      .col-8 {
+        grid-column: span 8;
+      }
+      .col-6 {
+        grid-column: span 6;
+      }
+      .col-4 {
+        grid-column: span 4;
+      }
+      .col-3 {
+        grid-column: span 3;
+      }
+
+      .card-title {
+        font-size: 14px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 0;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .stat-value {
+        font-size: 28px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .stat-trend.positive {
+        color: var(--accent-green);
+        font-size: 14px;
+      }
+      .stat-trend.negative {
+        color: var(--accent-red);
+        font-size: 14px;
+      }
+
+      /* FORMS */
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        margin-bottom: 15px;
+        background-color: var(--bg-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-main);
+        border-radius: 6px;
+        font-family: inherit;
+      }
+      input:focus,
+      textarea:focus {
+        border-color: var(--accent-blue);
+        outline: none;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--accent-blue);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      button:hover {
+        background-color: #2563eb;
+      }
+      .btn-danger {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: var(--accent-red);
+        border: 1px solid var(--accent-red);
+      }
+      .btn-danger:hover {
+        background-color: var(--accent-red);
+        color: white;
+      }
+      .btn-purge {
+        width: auto;
+        padding: 6px 12px;
+        font-size: 12px;
+        background: transparent;
+        border: 1px solid var(--accent-red);
+        color: var(--accent-red);
+        margin: 0;
+      }
+      .btn-purge:hover {
+        background: var(--accent-red);
+        color: white;
+      }
+
+      /* TABLES */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      th,
+      td {
+        padding: 15px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+      }
+      th {
+        color: var(--text-muted);
+        font-weight: normal;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .status-verified {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--accent-green);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+      }
+      .status-tampered {
+        background: rgba(239, 68, 68, 0.1);
+        color: var(--accent-red);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      /* TERMINAL & MAP */
+      .audit-terminal {
+        height: 500px;
+        overflow-y: auto;
+        font-family: "Courier New", monospace;
+        font-size: 13px;
+        color: var(--text-muted);
+        background: #050505;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+      }
+      .tactical-map {
+        width: 100%;
+        height: 250px;
+        background: var(--bg-color);
+        background-image: radial-gradient(
+          circle,
+          var(--border-color) 1px,
+          transparent 1px
+        );
+        background-size: 20px 20px;
+        position: relative;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+      }
+      .map-target {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: var(--accent-red);
+        border-radius: 50%;
+        box-shadow: 0 0 10px var(--accent-red);
+      }
+      .map-target.verified {
+        background-color: var(--accent-blue);
+        box-shadow: 0 0 10px var(--accent-blue);
+      }
+
+      .flash-message {
+        background: rgba(59, 130, 246, 0.1);
+        border-left: 4px solid var(--accent-blue);
+        color: var(--text-main);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+      }
+
+      /* AI CHATBOT */
+      #ai-chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 320px;
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+        overflow: hidden;
+        transition: transform 0.3s ease;
+      }
+      .chat-header {
+        background-color: var(--sidebar-bg);
+        color: var(--text-main);
+        padding: 15px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+      }
+      #chat-body {
+        height: 250px;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        font-size: 13px;
+      }
+      .chat-msg {
+        padding: 8px 12px;
+        border-radius: 8px;
+        max-width: 85%;
+        word-wrap: break-word;
+      }
+      .msg-ai {
+        align-self: flex-start;
+        background-color: rgba(59, 130, 246, 0.1);
+        border-left: 3px solid var(--accent-blue);
+        color: var(--text-main);
+      }
+      .msg-user {
+        align-self: flex-end;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-right: 3px solid var(--text-muted);
+        color: var(--text-muted);
+      }
+      .chat-input-area {
+        display: flex;
+        border-top: 1px solid var(--border-color);
+        background-color: var(--sidebar-bg);
+      }
+      .chat-input-area input {
+        flex-grow: 1;
+        border: none;
+        background: transparent;
+        color: var(--text-main);
+        padding: 15px;
+        margin: 0;
+        outline: none;
+        font-family: inherit;
+      }
+      .chat-input-area button {
+        width: auto;
+        margin: 0;
+        padding: 0 20px;
+        background: transparent;
+        color: var(--accent-blue);
+        border-radius: 0;
+      }
+      .chat-input-area button:hover {
+        background: rgba(59, 130, 246, 0.1);
+      }
+      .minimized {
+        transform: translateY(305px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar" id="main-sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand hide-on-collapse">
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            style="min-width: 24px"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+          </svg>
+          O.S.I.R.I.S.
+        </div>
+        <button
+          class="toggle-btn"
+          onclick="toggleSidebar()"
+          title="Toggle Sidebar"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            style="min-width: 20px"
+          >
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      {% if logged_in %}
+      <div
+        class="nav-item active"
+        id="nav-dashboard"
+        onclick="switchTab('dashboard')"
+      >
+        <img
+          src="{{ url_for('static', filename='home.png') }}"
+          style="
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            min-width: 20px;
+          "
+          alt="Dashboard Icon"
+        />
+        <span class="hide-on-collapse">Dashboard</span>
+      </div>
+      <div class="nav-item" id="nav-uplink" onclick="switchTab('uplink')">
+        <img
+          src="{{ url_for('static', filename='satellite.png') }}"
+          style="
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            min-width: 20px;
+          "
+          alt="Uplink Icon"
+        />
+        <span class="hide-on-collapse">Comm Uplink</span>
+      </div>
+
+      {% if role == 'admin' %}
+      <div class="nav-item" id="nav-analytics" onclick="switchTab('analytics')">
+        <img
+          src="{{ url_for('static', filename='analytics.png') }}"
+          style="
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            min-width: 20px;
+          "
+          alt="Analytics Icon"
+          onerror="this.src='{{ url_for('static', filename='satellite.png') }}'"
+        />
+        <span class="hide-on-collapse">Threat Intelligence</span>
+      </div>
+      <div class="nav-item" id="nav-forensics" onclick="switchTab('forensics')">
+        <img
+          src="{{ url_for('static', filename='forensics.png') }}"
+          style="
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            min-width: 20px;
+          "
+          alt="Forensics Icon"
+          onerror="this.src='{{ url_for('static', filename='settings.png') }}'"
+        />
+        <span class="hide-on-collapse">System Forensics</span>
+      </div>
+      {% endif %}
+
+      <div class="nav-item" id="nav-settings" onclick="switchTab('settings')">
+        <img
+          src="{{ url_for('static', filename='settings.png') }}"
+          style="
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            min-width: 20px;
+          "
+          alt="Settings Icon"
+        />
+        <span class="hide-on-collapse">Settings</span>
+      </div>
+
+      <div style="flex-grow: 1"></div>
+
+      <form action="/logout" method="GET" style="margin: 0">
+        <button
+          type="submit"
+          class="btn-danger"
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+          "
+        >
+          <img
+            src="{{ url_for('static', filename='logout.png') }}"
+            style="
+              width: 16px;
+              height: 16px;
+              object-fit: contain;
+              min-width: 16px;
+            "
+            alt="Logout Icon"
+          />
+          <span class="hide-on-collapse">Terminate Session</span>
+        </button>
+      </form>
+      {% endif %}
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        {% if logged_in %}
+        <input type="text" class="search-bar" placeholder="Search records..." />
+        {% else %}
+        <div></div>
+        {% endif %}
+
+        <div class="user-profile">
+          <span style="color: var(--text-muted)"
+            >Status:
+            <span style="color: var(--accent-green)">Online</span></span
+          >
+          {% if logged_in %}
+          <div
+            style="
+              width: 35px;
+              height: 35px;
+              background: var(--accent-blue);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: bold;
+            "
+          >
+            {{ username[0]|upper }}
+          </div>
+          <div>
+            <div style="font-weight: bold; font-size: 14px">{{ username }}</div>
+            <div
+              style="
+                font-size: 12px;
+                color: var(--text-muted);
+                text-transform: uppercase;
+              "
+            >
+              {{ role }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="flash-message">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %} {% if not logged_in %} {% if
+      requires_2fa %}
+      <div
+        class="dashboard-grid"
+        style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 70vh;
+        "
+      >
+        <div
+          class="card"
+          style="
+            width: 400px;
+            border: 1px solid var(--accent-blue);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+          "
+        >
+          <h2
+            style="
+              margin-top: 0;
+              border-bottom: 1px solid var(--border-color);
+              padding-bottom: 15px;
+              color: var(--accent-blue);
+            "
+          >
+            <span style="font-size: 24px">🛡️</span> Two-Factor Verification
+          </h2>
+          <p
+            style="font-size: 13px; color: var(--text-muted); line-height: 1.5"
+          >
+            Operative
+            <strong style="color: var(--text-main)"
+              >{{ pending_user | upper }}</strong
+            >, a secure 6-digit PIN has been transmitted. Enter it below.
+          </p>
+          <form action="/verify_2fa" method="POST">
+            <label style="font-size: 12px; color: var(--text-muted)"
+              >Secure Token</label
+            >
+            <input
+              type="text"
+              name="pin"
+              required
+              placeholder="_ _ _ _ _ _"
+              style="
+                letter-spacing: 10px;
+                font-size: 20px;
+                text-align: center;
+                font-weight: bold;
+              "
+              maxlength="6"
+              autocomplete="off"
+            />
+            <button type="submit" style="margin-top: 10px">
+              Verify & Authenticate
+            </button>
+          </form>
+          <form action="/" method="GET" style="margin-top: 10px">
+            <button
+              type="submit"
+              style="
+                background: transparent;
+                border: 1px solid var(--border-color);
+                color: var(--text-muted);
+              "
+            >
+              Abort Login
+            </button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div
+        class="dashboard-grid"
+        style="
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 70vh;
+        "
+      >
+        <div class="card" style="width: 400px">
+          <h2
+            style="
+              margin-top: 0;
+              border-bottom: 1px solid var(--border-color);
+              padding-bottom: 15px;
+            "
+          >
+            Authentication
+          </h2>
+          <form action="/login" method="POST">
+            <label style="font-size: 12px; color: var(--text-muted)"
+              >Operative ID</label
+            >
+            <input
+              type="text"
+              name="username"
+              required
+              placeholder="Enter Username"
+            />
+            <label style="font-size: 12px; color: var(--text-muted)"
+              >Passphrase</label
+            >
+            <input
+              type="password"
+              name="password"
+              required
+              placeholder="••••••••"
+            />
+            <button type="submit">Establish Secure Connection</button>
+          </form>
+        </div>
+      </div>
+      {% endif %} {% endif %} {% if logged_in and role == 'agent' %}
+      <div id="view-dashboard" class="dashboard-grid">
+        <div class="card col-12" style="text-align: center; padding: 50px">
+          <h2 style="border: none">
+            Welcome to O.S.I.R.I.S., Operative {{ username | upper }}
+          </h2>
+          <p style="color: var(--text-muted); margin-bottom: 30px">
+            Your connection is secured via AES-256 Fernet Encryption. Awaiting
+            field intelligence.
+          </p>
+          <button
+            onclick="switchTab('uplink')"
+            style="width: 250px; margin: 0 auto"
+          >
+            Initialize Comm Uplink
+          </button>
+        </div>
+      </div>
+      <div id="view-uplink" class="dashboard-grid" style="display: none">
+        <div class="card col-8">
+          <h3 class="card-title">Transmit Intelligence</h3>
+          <form action="/submit_report" method="POST">
+            <div style="display: flex; gap: 10px">
+              <div style="flex-grow: 1">
+                <label style="font-size: 12px; color: var(--text-muted)"
+                  >Target Sector</label
+                >
+                <input
+                  type="text"
+                  id="sector-input"
+                  name="sector"
+                  required
+                  placeholder="Awaiting GPS Lock..."
+                />
+              </div>
+              <div style="padding-top: 22px">
+                <button
+                  type="button"
+                  onclick="getGPSLocation()"
+                  style="
+                    background: var(--bg-color);
+                    border: 1px solid var(--border-color);
+                    color: var(--accent-blue);
+                  "
+                >
+                  📍 GPS Lock
+                </button>
+              </div>
+            </div>
+            <label style="font-size: 12px; color: var(--text-muted)"
+              >Threat Level</label
+            >
+            <select name="threat_level">
+              <option value="LOW">Routine Surveillance</option>
+              <option value="ELEVATED">Hostile Activity</option>
+              <option value="CRITICAL">Immediate Support</option>
+            </select>
+            <label style="font-size: 12px; color: var(--text-muted)"
+              >Payload</label
+            >
+            <textarea
+              name="intelligence"
+              rows="5"
+              required
+              placeholder="Enter raw intelligence data..."
+            ></textarea>
+            <button type="submit">Encrypt & Transmit</button>
+          </form>
+        </div>
+        <div class="card col-4">
+          <h3 class="card-title">Encryption Status</h3>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 15px;
+              margin-bottom: 20px;
+            "
+          >
+            <div
+              style="
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                border: 4px solid var(--accent-green);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              "
+            >
+              <span style="color: var(--accent-green); font-weight: bold"
+                >AES</span
+              >
+            </div>
+            <div>
+              <div style="font-weight: bold">Symmetric 256-bit</div>
+              <div style="font-size: 12px; color: var(--text-muted)">
+                Fernet Cryptography
+              </div>
+            </div>
+          </div>
+          <p
+            style="font-size: 13px; color: var(--text-muted); line-height: 1.6"
+          >
+            All outbound transmissions are encrypted client-side prior to
+            database injection. Payloads are hashed via SHA-256.
+          </p>
+        </div>
+      </div>
+      <div id="view-settings" class="dashboard-grid" style="display: none">
+        <div class="card col-12">
+          <h3 class="card-title">Operative Settings</h3>
+          <p style="color: var(--text-muted)">
+            Your cryptographic keys are managed remotely by the Command Center.
+            Local settings are locked.
+          </p>
+        </div>
+      </div>
+      {% endif %} {% if logged_in and role == 'admin' %}
+
+      <div id="view-dashboard" class="dashboard-grid">
+        <div class="card col-3">
+          <div class="card-title">
+            Total Records
+            <img
+              src="{{ url_for('static', filename='records.png') }}"
+              style="width: 18px; height: 18px; object-fit: contain"
+              alt="Records Icon"
+              onerror="this.style.display = 'none'"
+            />
+          </div>
+          <div class="stat-value">{{ reports|length }}</div>
+          <div class="stat-trend positive">Active in Database</div>
+        </div>
+        <div class="card col-3">
+          <div class="card-title">
+            Encryption
+            <img
+              src="{{ url_for('static', filename='encrypted.png') }}"
+              style="width: 18px; height: 18px; object-fit: contain"
+              alt="Encryption Icon"
+              onerror="this.style.display = 'none'"
+            />
+          </div>
+          <div class="stat-value">AES-256</div>
+          <div class="stat-trend positive">Fernet Active</div>
+        </div>
+        <div class="card col-3">
+          <div class="card-title">
+            Integrity Hash
+            <img
+              src="{{ url_for('static', filename='integrity.png') }}"
+              style="width: 18px; height: 18px; object-fit: contain"
+              alt="Integrity Icon"
+              onerror="this.style.display = 'none'"
+            />
+          </div>
+          <div class="stat-value">SHA-256</div>
+          <div class="stat-trend positive">Monitoring Changes</div>
+        </div>
+        <div class="card col-3">
+          <div class="card-title">
+            System Status
+            <img
+              src="{{ url_for('static', filename='status.png') }}"
+              style="width: 18px; height: 18px; object-fit: contain"
+              alt="Status Icon"
+              onerror="this.style.display = 'none'"
+            />
+          </div>
+          <div class="stat-value" style="color: var(--accent-green)">
+            SECURE
+          </div>
+          <div class="stat-trend">Defenses Nominal</div>
+        </div>
+
+        <div class="card col-12">
+          <h3 class="card-title">Live Tracking Sector</h3>
+          <div class="tactical-map" id="sectorMap"></div>
+        </div>
+
+        <div class="card col-12">
+          <h3 class="card-title">Decrypted Intelligence Records</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Operative</th>
+                <th>Sector</th>
+                <th>Decrypted Intel</th>
+                <th>Integrity</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for report in reports %}
+              <tr
+                class="report-row"
+                data-sector="{{ report.sector }}"
+                data-threat="{{ report.threat }}"
+              >
+                <td><strong>{{ report.agent }}</strong></td>
+                <td>
+                  {{ report.sector }}<br /><span
+                    style="font-size: 11px; color: var(--text-muted)"
+                    >{{ report.threat }}</span
+                  >
+                </td>
+                <td
+                  class="decryption-effect"
+                  data-target="{{ report.decrypted_text }}"
+                >
+                  [DECRYPTING...]
+                </td>
+                <td>
+                  {% if 'VERIFIED' in report.status %}
+                  <span class="status-badge status-verified">VERIFIED</span>
+                  {% else %}
+                  <span class="status-badge status-tampered">TAMPERED</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if 'TAMPERED' in report.status %}
+                  <form
+                    action="/purge/{{ report.id }}"
+                    method="POST"
+                    style="margin: 0"
+                  >
+                    <button
+                      type="submit"
+                      class="btn-purge"
+                      onclick="
+                        return confirm('Permanently delete compromised data?');
+                      "
+                    >
+                      PURGE
+                    </button>
+                  </form>
+                  {% else %}
+                  <span style="color: var(--text-muted); font-size: 12px"
+                    >Secure</span
+                  >
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %} {% if not reports %}
+              <tr>
+                <td
+                  colspan="5"
+                  style="
+                    text-align: center;
+                    color: var(--text-muted);
+                    padding: 30px;
+                  "
+                >
+                  No records found.
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="view-analytics" class="dashboard-grid" style="display: none">
+        <div
+          class="card col-12"
+          style="
+            background: linear-gradient(
+              90deg,
+              rgba(59, 130, 246, 0.1),
+              transparent
+            );
+            border-left: 4px solid var(--accent-blue);
+          "
+        >
+          <h2 style="margin: 0; color: var(--accent-blue); border: none">
+            Global Threat Matrix
+          </h2>
+          <p
+            style="
+              color: var(--text-muted);
+              margin-top: 5px;
+              margin-bottom: 0;
+              font-size: 13px;
+            "
+          >
+            Real-time telemetry, predictive threat modeling, and sector
+            intelligence distribution.
+          </p>
+        </div>
+
+        <div class="card col-8">
+          <h3 class="card-title">7-Day Signal Telemetry Volume</h3>
+          <canvas id="timelineChart" height="100"></canvas>
+        </div>
+
+        <div class="card col-4">
+          <h3 class="card-title">Threat Classification</h3>
+          <canvas id="threatChart" height="200"></canvas>
+        </div>
+
+        <div class="card col-6">
+          <h3 class="card-title">Intelligence by Sector</h3>
+          <canvas id="sectorChart" height="150"></canvas>
+        </div>
+
+        <div class="card col-6">
+          <h3 class="card-title">Threat Vector Distribution</h3>
+          <canvas id="radarChart" height="150"></canvas>
+        </div>
+      </div>
+
+      <div id="view-uplink" class="dashboard-grid" style="display: none">
+        <div class="card col-12" style="max-width: 600px; margin: 0 auto">
+          <h3 class="card-title">Register New Operative</h3>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 0">
+            Passwords automatically hashed via SHA-256 for secure storage.
+          </p>
+          <form action="/create_agent" method="POST">
+            <input
+              type="text"
+              name="new_username"
+              required
+              placeholder="New Operative ID"
+            />
+            <input
+              type="password"
+              name="new_password"
+              required
+              placeholder="Secure Passphrase"
+            />
+            <button type="submit">Provision Access</button>
+          </form>
+        </div>
+      </div>
+
+      <div id="view-forensics" class="dashboard-grid" style="display: none">
+        <div class="card col-12" style="display: flex; flex-direction: column">
+          <h3 class="card-title" style="color: var(--accent-blue)">
+            Live System Forensics & Audit Logs
+            <span
+              style="
+                font-size: 10px;
+                color: var(--text-muted);
+                font-weight: normal;
+                letter-spacing: 0;
+              "
+              >Monitoring Brute Force Attempts & Database Writes</span
+            >
+          </h3>
+          <div class="audit-terminal">
+            {% for log in audit_logs %}
+            <div
+              style="
+                margin-bottom: 8px;
+                border-bottom: 1px solid #111;
+                padding-bottom: 4px;
+              "
+            >
+              <span style="color: var(--accent-blue)">[{{ log[0] }}]</span>
+              {% if 'CRITICAL' in log[1] or 'SECURITY ALERT' in log[1] %}
+              <span style="color: var(--accent-red); font-weight: bold"
+                >{{ log[1] }}</span
+              >
+              {% elif 'WARNING' in log[1] %}
+              <span style="color: var(--accent-warning)">{{ log[1] }}</span>
+              {% else %}
+              <span style="color: var(--text-main)">{{ log[1] }}</span>
+              {% endif %}
+            </div>
+            {% endfor %} {% if not audit_logs %}
+            <div>No system logs available.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div id="view-settings" class="dashboard-grid" style="display: none">
+        <div
+          class="card col-12"
+          style="
+            border: 1px solid var(--accent-red);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+          "
+        >
+          <h3 style="color: var(--accent-red); margin-top: 0; font-size: 24px">
+            EMERGENCY OVERRIDE
+          </h3>
+          <p style="color: var(--text-muted); margin-bottom: 20px">
+            Initiating Protocol Zero will instantly incinerate all database
+            records and audit logs. This action is irreversible.
+          </p>
+          <form
+            action="/protocol_zero"
+            method="POST"
+            onsubmit="
+              return confirm('CRITICAL WARNING: Authorize Protocol Zero?');
+            "
+          >
+            <button
+              type="submit"
+              style="
+                background-color: var(--accent-red);
+                width: 300px;
+                margin: 0 auto;
+              "
+            >
+              INITIATE PROTOCOL ZERO
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if logged_in %}
+    <div id="ai-chat-widget">
+      <div class="chat-header" onclick="toggleChat()">
+        <span style="display: flex; align-items: center; gap: 8px">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"
+            ></path>
+          </svg>
+          O.S.I.R.I.S. AI
+        </span>
+        <span id="chat-toggle-icon">▼</span>
+      </div>
+      <div id="chat-body">
+        <div class="chat-msg msg-ai">
+          SYSTEM ONLINE. I am OSIRIS, your Tactical AI Assistant. Type 'help'
+          for commands.
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input
+          type="text"
+          id="ai-input"
+          placeholder="Enter query..."
+          autocomplete="off"
+        />
+        <button onclick="sendChatMessage()">SEND</button>
+      </div>
+    </div>
+    {% endif %}
+
+    <script>
+      // 1. Matrix Decryption
+      document.addEventListener("DOMContentLoaded", function () {
+        const elements = document.querySelectorAll(".decryption-effect");
+        const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*+<>?";
+        elements.forEach((element) => {
+          const finalString = element.getAttribute("data-target");
+          if (!finalString || finalString === "[DECRYPTION FAILED]") return;
+          let iterations = 0;
+          const interval = setInterval(() => {
+            element.innerText = finalString
+              .split("")
+              .map((letter, index) => {
+                if (letter === " ") return " ";
+                if (index < iterations) return finalString[index];
+                return characters[
+                  Math.floor(Math.random() * characters.length)
+                ];
+              })
+              .join("");
+            iterations += 1 / 3;
+            if (iterations >= finalString.length) {
+              clearInterval(interval);
+              element.style.color = "var(--text-main)";
+            }
+          }, 20);
+        });
+      });
+
+      // 2. Map
+      document.addEventListener("DOMContentLoaded", function () {
+        const map = document.getElementById("sectorMap");
+        if (map) {
+          const rows = document.querySelectorAll("tbody tr");
+          rows.forEach((row) => {
+            if (row.innerText.includes("No records found")) return;
+            const dot = document.createElement("div");
+            dot.className = "map-target";
+            if (row.innerText.includes("VERIFIED"))
+              dot.classList.add("verified");
+            dot.style.top = Math.floor(Math.random() * 80) + 10 + "%";
+            dot.style.left = Math.floor(Math.random() * 90) + 5 + "%";
+            map.appendChild(dot);
+          });
+        }
+      });
+
+      // 3. GPS
+      function getGPSLocation() {
+        const input = document.getElementById("sector-input");
+        input.value = "Acquiring...";
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              input.value = `LAT: ${pos.coords.latitude.toFixed(4)}°, LNG: ${pos.coords.longitude.toFixed(4)}°`;
+            },
+            (err) => {
+              input.value = "GPS FAILED. ENTER MANUAL.";
+            },
+            { enableHighAccuracy: true },
+          );
+        }
+      }
+
+      // 4. Search Filter
+      const searchBar = document.querySelector(".search-bar");
+      if (searchBar) {
+        searchBar.addEventListener("input", function (e) {
+          const searchTerm = e.target.value.toLowerCase();
+          const tableRows = document.querySelectorAll("tbody tr");
+          tableRows.forEach((row) => {
+            if (row.innerText.includes("No records found")) return;
+            const rowText = row.innerText.toLowerCase();
+            row.style.display = rowText.includes(searchTerm) ? "" : "none";
+          });
+        });
+      }
+
+      // 5. Tabs
+      function switchTab(tabName) {
+        const views = [
+          "dashboard",
+          "analytics",
+          "uplink",
+          "forensics",
+          "settings",
+        ];
+        views.forEach((view) => {
+          const el = document.getElementById("view-" + view);
+          const nav = document.getElementById("nav-" + view);
+          if (el && nav) {
+            if (view === tabName) {
+              el.style.display = "grid";
+              nav.classList.add("active");
+            } else {
+              el.style.display = "none";
+              nav.classList.remove("active");
+            }
+          }
+        });
+      }
+
+      // 6. Sidebar Toggle
+      function toggleSidebar() {
+        const sidebar = document.getElementById("main-sidebar");
+        sidebar.classList.toggle("collapsed");
+      }
+
+      // 7. AI Chatbot
+      function toggleChat() {
+        const chatWidget = document.getElementById("ai-chat-widget");
+        const icon = document.getElementById("chat-toggle-icon");
+        chatWidget.classList.toggle("minimized");
+        icon.innerText = chatWidget.classList.contains("minimized") ? "▲" : "▼";
+      }
+      function sendChatMessage() {
+        const inputField = document.getElementById("ai-input");
+        const text = inputField.value.trim().toLowerCase();
+        if (!text) return;
+        appendMessage("msg-user", text.toUpperCase());
+        inputField.value = "";
+        setTimeout(() => {
+          let response = generateAIResponse(text);
+          appendMessage("msg-ai", response);
+        }, 500);
+      }
+      document
+        .getElementById("ai-input")
+        ?.addEventListener("keypress", function (e) {
+          if (e.key === "Enter") sendChatMessage();
+        });
+      function appendMessage(className, text) {
+        const chatBody = document.getElementById("chat-body");
+        const msgDiv = document.createElement("div");
+        msgDiv.className = `chat-msg ${className}`;
+        msgDiv.innerText = text;
+        chatBody.appendChild(msgDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+      function generateAIResponse(query) {
+        if (query.includes("help"))
+          return "AVAILABLE COMMANDS: 'status', 'encryption', 'threats', 'clearance'.";
+        if (query.includes("status"))
+          return "SYSTEM STATUS: UPLINK SECURE. SQLite Database active.";
+        if (query.includes("encryption"))
+          return "SECURITY PROTOCOL: All data secured using Python Cryptography (Fernet Symmetric AES-256).";
+        if (query.includes("threat") || query.includes("tamper"))
+          return "INTEGRITY CHECK: Hashlib (SHA-256) is monitoring records for tampering.";
+        if (query.includes("clearance") || query.includes("admin"))
+          return "ACCESS CONTROL: Admin clearance required to purge compromised records.";
+        return "UNRECOGNIZED QUERY. Data insufficient. Type 'help' for tactical options.";
+      }
+
+      // 8. DATA ANALYTICS: Chart.js Integration for Threat Tab
+      document.addEventListener("DOMContentLoaded", function () {
+        const rows = document.querySelectorAll(".report-row");
+        const sectors = {};
+        const threats = { LOW: 0, ELEVATED: 0, CRITICAL: 0 };
+        const totalReports = rows.length || 1;
+
+        rows.forEach((row) => {
+          const sector = row.getAttribute("data-sector") || "Unknown";
+          const threat = row.getAttribute("data-threat") || "LOW";
+          sectors[sector] = (sectors[sector] || 0) + 1;
+          if (threats[threat] !== undefined) threats[threat]++;
+        });
+
+        Chart.defaults.color = "#94a3b8";
+        Chart.defaults.borderColor = "#2d3748";
+
+        // 1. Sector Bar Chart
+        const ctxSector = document.getElementById("sectorChart");
+        if (ctxSector) {
+          new Chart(ctxSector, {
+            type: "bar",
+            data: {
+              labels: Object.keys(sectors),
+              datasets: [
+                {
+                  label: "Total Reports",
+                  data: Object.values(sectors),
+                  backgroundColor: "#3b82f6",
+                  borderRadius: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+            },
+          });
+        }
+
+        // 2. Threat Doughnut Chart
+        const ctxThreat = document.getElementById("threatChart");
+        if (ctxThreat) {
+          new Chart(ctxThreat, {
+            type: "doughnut",
+            data: {
+              labels: ["Routine", "Elevated", "Critical"],
+              datasets: [
+                {
+                  data: [
+                    threats["LOW"],
+                    threats["ELEVATED"],
+                    threats["CRITICAL"],
+                  ],
+                  backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
+                  borderWidth: 0,
+                  hoverOffset: 4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              cutout: "70%",
+              plugins: {
+                legend: {
+                  position: "bottom",
+                  labels: { color: "#e2e8f0", boxWidth: 12 },
+                },
+              },
+            },
+          });
+        }
+
+        // 3. NEW: Timeline Line Chart (Simulated 7-day trend based on total data volume)
+        const ctxTimeline = document.getElementById("timelineChart");
+        if (ctxTimeline) {
+          new Chart(ctxTimeline, {
+            type: "line",
+            data: {
+              labels: [
+                "T-6 Days",
+                "T-5 Days",
+                "T-4 Days",
+                "T-3 Days",
+                "T-2 Days",
+                "Yesterday",
+                "Today",
+              ],
+              datasets: [
+                {
+                  label: "Encrypted Signals",
+                  data: [
+                    Math.floor(totalReports * 0.2),
+                    Math.floor(totalReports * 0.5),
+                    Math.floor(totalReports * 0.8),
+                    Math.floor(totalReports * 0.4),
+                    Math.floor(totalReports * 1.2),
+                    Math.floor(totalReports * 0.9),
+                    totalReports,
+                  ],
+                  borderColor: "#10b981",
+                  backgroundColor: "rgba(16, 185, 129, 0.1)",
+                  borderWidth: 2,
+                  fill: true,
+                  tension: 0.4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+            },
+          });
+        }
+
+        // 4. NEW: Vector Matrix Radar Chart (Simulated distribution)
+        const ctxRadar = document.getElementById("radarChart");
+        if (ctxRadar) {
+          new Chart(ctxRadar, {
+            type: "radar",
+            data: {
+              labels: ["CYBER", "KINETIC", "SIGINT", "HUMINT", "INSIDER"],
+              datasets: [
+                {
+                  label: "Threat Vector Profile",
+                  data: [
+                    threats["CRITICAL"] * 2 + 1,
+                    threats["ELEVATED"] + 2,
+                    totalReports,
+                    threats["LOW"] + 3,
+                    threats["CRITICAL"] + 1,
+                  ],
+                  backgroundColor: "rgba(59, 130, 246, 0.2)",
+                  borderColor: "#3b82f6",
+                  pointBackgroundColor: "#fff",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              scales: {
+                r: {
+                  ticks: { display: false },
+                  grid: { color: "#2d3748" },
+                  angleLines: { color: "#2d3748" },
+                },
+              },
+              plugins: { legend: { display: false } },
+            },
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

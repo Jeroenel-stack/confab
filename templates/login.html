@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Field Intelligence Portal</title>
+    <style>
+      body {
+        font-family: "Courier New", monospace;
+        background-color: #0c1c0c;
+        color: #00ff41;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+      .container {
+        background-color: #0a0a0a;
+        border: 1px solid #00ff41;
+        padding: 30px;
+        width: 100%;
+        max-width: 450px;
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+      }
+      h1 {
+        border-bottom: 1px solid #00ff41;
+        padding-bottom: 10px;
+        text-transform: uppercase;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        background-color: #000;
+        border: 1px solid #333;
+        color: #00ff41;
+        font-family: "Courier New";
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: #00ff41;
+        color: #000;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+      button:hover {
+        background-color: white;
+      }
+      .flash {
+        color: yellow;
+        background-color: rgba(255, 255, 0, 0.1);
+        padding: 10px;
+        margin-top: 15px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center; margin-bottom: 25px">
+        🌐 Global Crisis Uplink
+      </h1>
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="flash">⚠️ ALERT: {{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+      <h2>AUTHENTICATION</h2>
+      <form action="/" method="POST">
+        <label>Operative ID (Username)</label>
+        <input type="text" name="username" required placeholder="_" />
+        <br /><br />
+        <label>Passphrase</label>
+        <input
+          type="password"
+          name="password"
+          required
+          placeholder="********"
+        />
+        <br />
+        <button type="submit">Establish Secure Connection</button>
+      </form>
+      <p
+        style="
+          font-size: 12px;
+          text-align: center;
+          color: #888;
+          margin-top: 25px;
+        "
+      >
+        [Uplink Active // AES-256 (Fernet) Encryption Ready]
+      </p>
+    </div>
+  </body>
+</html>

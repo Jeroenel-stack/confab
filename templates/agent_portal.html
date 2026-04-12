@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Field Operative Portal</title>
+    <style>
+      body {
+        font-family: "Courier New", monospace;
+        background-color: #0c1c0c;
+        color: #00ff41;
+        padding: 20px;
+      }
+      .container {
+        background-color: #0a0a0a;
+        border: 1px solid #00ff41;
+        padding: 30px;
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+      }
+      h1,
+      h2,
+      h3 {
+        border-bottom: 1px solid #00ff41;
+        padding-bottom: 10px;
+        text-transform: uppercase;
+        margin-top: 0;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        background-color: #000;
+        border: 1px solid #333;
+        color: #00ff41;
+        font-family: "Courier New";
+        box-sizing: border-box;
+      }
+      textarea {
+        resize: vertical;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: #00ff41;
+        color: #000;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+      button:hover {
+        background-color: white;
+      }
+      .danger-btn {
+        background-color: #cc0000;
+        color: white;
+      }
+      .danger-btn:hover {
+        background-color: #ff3333;
+      }
+      .flash {
+        color: yellow;
+        background-color: rgba(255, 255, 0, 0.1);
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center">📡 Field Operative Portal</h1>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px;
+          background-color: #111;
+          margin-bottom: 20px;
+          border: 1px dashed #00ff41;
+        "
+      >
+        <p><strong>Uplink Status:</strong> Active // Secure</p>
+        <p><strong>Operative:</strong> {{ username | upper }}</p>
+      </div>
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="flash">⚠️ System Status: {{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+      <h2>Submit Intelligence Report</h2>
+      <form action="/agent_portal" method="POST">
+        <label>Target Sector</label>
+        <input
+          type="text"
+          name="sector"
+          required
+          placeholder="e.g., Grid 14-B"
+        />
+        <label>Threat Level</label>
+        <select name="threat">
+          <option value="LOW">LOW - Routine Surveillance</option>
+          <option value="ELEVATED">ELEVATED - Hostile Activity</option>
+          <option value="CRITICAL">
+            CRITICAL - Immediate Support Required
+          </option>
+        </select>
+        <label>Intelligence Payload</label>
+        <textarea
+          name="intelligence"
+          rows="6"
+          required
+          placeholder="Enter raw intelligence data here..."
+        ></textarea>
+        <button type="submit">Encrypt & Transmit Report</button>
+      </form>
+      <form action="/logout" method="GET" style="margin-top: 20px">
+        <button type="submit" class="danger-btn">Terminate Session</button>
+      </form>
+    </div>
+  </body>
+</html>

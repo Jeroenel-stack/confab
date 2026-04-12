@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Secure Field Intelligence Portal</title>
+    <style>
+      body {
+        font-family: "Courier New", monospace;
+        background-color: #0c1c0c;
+        color: #00ff41;
+        padding: 20px;
+      }
+      .container {
+        background-color: #0a0a0a;
+        border: 1px solid #00ff41;
+        padding: 30px;
+        width: 100%;
+        max-width: 950px;
+        margin: 0 auto;
+        box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+        position: relative;
+      }
+      h1,
+      h2,
+      h3 {
+        border-bottom: 1px solid #00ff41;
+        padding-bottom: 10px;
+        text-transform: uppercase;
+        margin-top: 0;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        background-color: #00ff41;
+        color: #000;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+      }
+      button:hover {
+        background-color: white;
+      }
+      .danger-btn {
+        background-color: #cc0000;
+        color: white;
+      }
+      .danger-btn:hover {
+        background-color: #ff3333;
+      }
+      .flash {
+        color: yellow;
+        background-color: rgba(255, 255, 0, 0.1);
+        padding: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 14px;
+      }
+      th,
+      td {
+        border: 1px solid #333;
+        padding: 10px;
+        text-align: left;
+      }
+      th {
+        background-color: #111;
+        color: #fff;
+      }
+      tr:nth-child(even) {
+        background-color: #111;
+      }
+      tr:hover {
+        background-color: #1a331a;
+      }
+
+      /* O.S.I.R.I.S. AI Widget (Investigative Cat Style) */
+      #osiris-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        background-color: #1a1a1a;
+        border: 1px solid #00ff41;
+        box-shadow: 0 0 10px rgba(0, 255, 65, 0.15);
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+      }
+
+      .osiris-header {
+        background-color: #00ff41;
+        color: #000;
+        padding: 10px;
+        font-weight: bold;
+        text-align: center;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      #osiris-body {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 150px;
+        overflow-y: auto;
+        border-top: 1px solid #333;
+      }
+
+      .osiris-cat {
+        font-size: 24px;
+        color: #fff;
+        margin-bottom: 10px;
+      }
+      .osiris-chat {
+        font-size: 12px;
+        text-align: left;
+        width: 100%;
+        color: #888;
+        margin: 0;
+      }
+
+      #osiris-input {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin: 10px;
+        background-color: #000;
+        border: 1px solid #333;
+        color: #00ff41;
+        font-family: "Courier New";
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 style="text-align: center">🛡️ COMMAND CENTER DASHBOARD</h1>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 15px;
+          background-color: #111;
+          margin-bottom: 20px;
+          border: 1px dashed #00ff41;
+        "
+      >
+        <p>
+          <strong>Welcome, Commander. Showing decrypted intelligence.</strong>
+        </p>
+        <p><strong>Admin:</strong> {{ username | upper }}</p>
+      </div>
+      {% with messages = get_flashed_messages() %} {% if messages %} {% for
+      message in messages %}
+      <div class="flash">⚠️ System Alert: {{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <h2>Encrypted Database Records</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>Sector / Threat</th>
+            <th>Database Encryption<br />(at-rest snippet)</th>
+            <th>Decrypted Intel</th>
+            <th>Integrity Check<br />(SHA-256 Verified)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in reports %}
+          <tr>
+            <td style="color: white">{{ report.agent }}</td>
+            <td>
+              {{ report.sector }}<br /><small style="color: #888"
+                >{{ report.threat }}</small
+              >
+            </td>
+            <td>
+              <small style="color: #666"
+                >{{ report.encrypted_data_preview }}</small
+              >
+            </td>
+            <td>{{ report.decrypted_text }}</td>
+            <td style="color: {{ report.integrity_color }}; font-weight: bold;">
+              {{ report.integrity }}
+            </td>
+          </tr>
+          {% endfor %} {% if not reports %}
+          <tr>
+            <td
+              colspan="5"
+              style="text-align: center; color: #888; padding: 25px"
+            >
+              No intelligence reports found in database.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      <form action="/logout" method="GET" style="margin-top: 20px">
+        <button type="submit" class="danger-btn">
+          Terminate Admin Session
+        </button>
+      </form>
+    </div>
+
+    <div id="osiris-widget">
+      <div class="osiris-header" onclick="toggleOsiris()">
+        <span>🤖 O.S.I.R.I.S. AI</span>
+        <span>▼</span>
+      </div>
+      <div id="osiris-body">
+        <div class="osiris-cat">🔎 [=^..^=]</div>
+        <p id="osiris-chat-log" class="osiris-chat">
+          System: Status Normal.<br />Type 'status' or 'integrity' for data
+          analysis...
+        </p>
+      </div>
+      <input type="text" id="osiris-input" placeholder="Analyze query..." />
+    </div>
+
+    <script>
+      // O.S.I.R.I.S. AI Logic (Simple rule-based responses based on wireframe)
+      function toggleOsiris() {
+        const body = document.getElementById("osiris-body");
+        body.style.display = body.style.display === "none" ? "flex" : "none";
+      }
+
+      document
+        .getElementById("osiris-input")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            processQuery();
+          }
+        });
+
+      function processQuery() {
+        const input = document.getElementById("osiris-input");
+        const chatLog = document.getElementById("osiris-chat-log");
+        const query = input.value.trim().toLowerCase();
+        input.value = "";
+
+        let response = "SYSTEM: Command recognized.<br>";
+
+        if (query === "status") {
+          response +=
+            "System: Uplink Secure.<br>Database encryption (AES-256) is active.";
+        } else if (query === "integrity") {
+          response +=
+            "OSIRIS: SHA-256 Hash Matching active.<br>Monitoring database for enemy tampering.";
+        } else if (query === "analyze" || query.includes("tamper")) {
+          response +=
+            "OSIRIS: Analysis Complete.<br>If integrity status is red '❌ TAMPERED', data is compromised.";
+        } else if (query === "cat") {
+          response += "🔎 [=^..^=] MEOW. Investigative protocol active.";
+        } else {
+          response +=
+            "SYSTEM: Command not understood.<br>Try 'status', 'integrity', or 'analyze'.";
+        }
+
+        chatLog.innerHTML = response;
+      }
+    </script>
+  </body>
+</html>
