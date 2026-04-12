@@ -349,5 +349,53 @@ def protocol_zero():
     
     return redirect('/admin_view')
 
+# --- NEW ROUTE: DELETE ANY REPORT ---
+@app.route('/delete_report/<int:report_id>', methods=['POST'])
+def delete_report(report_id):
+    if session.get('role') != 'admin':
+        return redirect('/')
+        
+    conn = sqlite3.connect('intelligence.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM reports WHERE id=?", (report_id,))
+    conn.commit()
+    conn.close()
+    
+    log_action(f"Admin manually deleted report ID: {report_id}")
+    flash("Record successfully incinerated from database.")
+    return redirect('/admin_view')
+
+# --- NEW ROUTE: UPDATE & RE-ENCRYPT REPORT ---
+@app.route('/edit_report', methods=['POST'])
+def edit_report():
+    if session.get('role') != 'admin':
+        return redirect('/')
+        
+    report_id = request.form['report_id']
+    new_sector = request.form['sector']
+    new_threat = request.form['threat_level']
+    raw_intel = request.form['intelligence']
+    
+    # CRITICAL SECURITY STEP: We must re-encrypt and re-hash the new edit
+    # so the integrity system doesn't flag it as tampered!
+    new_encrypted_payload = cipher_suite.encrypt(raw_intel.encode()).decode()
+    new_integrity_hash = hashlib.sha256(new_encrypted_payload.encode()).hexdigest()
+    
+    conn = sqlite3.connect('intelligence.db')
+    c = conn.cursor()
+    c.execute("""
+        UPDATE reports 
+        SET sector=?, threat_level=?, encrypted_intel=?, hash_checksum=?
+        WHERE id=?
+    """, (new_sector, new_threat, new_encrypted_payload, new_integrity_hash, report_id))
+    conn.commit()
+    conn.close()
+    
+    log_action(f"Admin updated and re-encrypted report ID: {report_id}")
+    flash("Record updated successfully. New encryption keys applied.")
+    return redirect('/admin_view')
+
 if __name__ == '__main__':
+    
+    
     app.run(debug=True, port=5000)

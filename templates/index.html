@@ -231,18 +231,63 @@
         background-color: var(--accent-red);
         color: white;
       }
-      .btn-purge {
+
+      /* =========================================
+         EDIT MODAL & BUTTONS
+         ========================================= */
+      .btn-edit {
+        width: auto;
+        padding: 6px 12px;
+        font-size: 12px;
+        background: transparent;
+        border: 1px solid var(--accent-blue);
+        color: var(--accent-blue);
+        margin-right: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .btn-edit:hover {
+        background: var(--accent-blue);
+        color: white;
+      }
+
+      .btn-delete {
         width: auto;
         padding: 6px 12px;
         font-size: 12px;
         background: transparent;
         border: 1px solid var(--accent-red);
         color: var(--accent-red);
-        margin: 0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: 0.2s;
       }
-      .btn-purge:hover {
+      .btn-delete:hover {
         background: var(--accent-red);
         color: white;
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+      }
+      .modal-content {
+        background: var(--card-bg);
+        padding: 30px;
+        border-radius: 12px;
+        width: 500px;
+        border: 1px solid var(--accent-blue);
+        box-shadow: 0 0 25px rgba(59, 130, 246, 0.2);
       }
 
       /* TABLES */
@@ -496,7 +541,7 @@
             min-width: 20px;
           "
           alt="Analytics Icon"
-          onerror="this.src='{{ url_for('static', filename='satellite.png') }}'"
+          onerror="this.src='{{ url_for('static', filename='threat.png') }}'"
         />
         <span class="hide-on-collapse">Threat Intelligence</span>
       </div>
@@ -944,27 +989,32 @@
                   {% endif %}
                 </td>
                 <td>
-                  {% if 'TAMPERED' in report.status %}
-                  <form
-                    action="/purge/{{ report.id }}"
-                    method="POST"
-                    style="margin: 0"
-                  >
+                  <div style="display: flex; gap: 5px">
                     <button
-                      type="submit"
-                      class="btn-purge"
-                      onclick="
-                        return confirm('Permanently delete compromised data?');
-                      "
+                      class="btn-edit"
+                      onclick="openEditModal('{{ report.id }}', '{{ report.sector }}', '{{ report.threat }}', '{{ report.decrypted_text | escape }}')"
                     >
-                      PURGE
+                      EDIT
                     </button>
-                  </form>
-                  {% else %}
-                  <span style="color: var(--text-muted); font-size: 12px"
-                    >Secure</span
-                  >
-                  {% endif %}
+
+                    <form
+                      action="/delete_report/{{ report.id }}"
+                      method="POST"
+                      style="margin: 0"
+                    >
+                      <button
+                        type="submit"
+                        class="btn-delete"
+                        onclick="
+                          return confirm(
+                            'CRITICAL: Permanently delete this intelligence record?',
+                          );
+                        "
+                      >
+                        DELETE
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
               {% endfor %} {% if not reports %}
@@ -1140,6 +1190,55 @@
         </div>
       </div>
       {% endif %}
+    </div>
+
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <h3
+          style="
+            margin-top: 0;
+            color: var(--accent-blue);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+          "
+        >
+          Update Intelligence Record
+        </h3>
+        <form action="/edit_report" method="POST">
+          <input type="hidden" id="edit-id" name="report_id" />
+
+          <label style="font-size: 12px; color: var(--text-muted)"
+            >Target Sector</label
+          >
+          <input type="text" id="edit-sector" name="sector" required />
+
+          <label style="font-size: 12px; color: var(--text-muted)"
+            >Threat Level</label
+          >
+          <select id="edit-threat" name="threat_level">
+            <option value="LOW">Routine Surveillance</option>
+            <option value="ELEVATED">Hostile Activity</option>
+            <option value="CRITICAL">Immediate Support</option>
+          </select>
+
+          <label style="font-size: 12px; color: var(--text-muted)"
+            >Payload (Will be re-encrypted automatically)</label
+          >
+          <textarea
+            id="edit-intel"
+            name="intelligence"
+            rows="5"
+            required
+          ></textarea>
+
+          <div style="display: flex; gap: 10px; margin-top: 15px">
+            <button type="submit">Update & Re-Encrypt</button>
+            <button type="button" class="btn-danger" onclick="closeEditModal()">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     {% if logged_in %}
@@ -1388,7 +1487,7 @@
                     threats["ELEVATED"],
                     threats["CRITICAL"],
                   ],
-                  backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
+                  backgroundColor: ["#10b981", "#f59e0b", "#ef4444"], // Green, Orange, Red
                   borderWidth: 0,
                   hoverOffset: 4,
                 },
@@ -1407,7 +1506,7 @@
           });
         }
 
-        // 3. NEW: Timeline Line Chart (Simulated 7-day trend based on total data volume)
+        // 3. NEW: Timeline Line Chart
         const ctxTimeline = document.getElementById("timelineChart");
         if (ctxTimeline) {
           new Chart(ctxTimeline, {
@@ -1449,7 +1548,7 @@
           });
         }
 
-        // 4. NEW: Vector Matrix Radar Chart (Simulated distribution)
+        // 4. NEW: Vector Matrix Radar Chart
         const ctxRadar = document.getElementById("radarChart");
         if (ctxRadar) {
           new Chart(ctxRadar, {
@@ -1486,6 +1585,19 @@
           });
         }
       });
+
+      // 9. Edit Modal Logic
+      function openEditModal(id, sector, threat, intel) {
+        document.getElementById("edit-id").value = id;
+        document.getElementById("edit-sector").value = sector;
+        document.getElementById("edit-threat").value = threat;
+        document.getElementById("edit-intel").value = intel;
+        document.getElementById("editModal").style.display = "flex";
+      }
+
+      function closeEditModal() {
+        document.getElementById("editModal").style.display = "none";
+      }
     </script>
   </body>
 </html>
