@@ -10,32 +10,48 @@ from supabase import create_client, Client
 import smtplib
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
+import google.generativeai as genai
 
-
-# Load the hidden variables from the .env file
+# ==========================================
+# 1. OPEN THE VAULT FIRST!
+# ==========================================
+# This MUST run before os.getenv() is called anywhere else!
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "osiris_super_secret_session_key"
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
-# --- FILE UPLOAD CONFIGURATION ---
+# ==========================================
+# 2. AI CORE CONFIGURATION
+# ==========================================
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    # UPDATED: Using the current-generation flash model to bypass the 404 error
+    ai_model = genai.GenerativeModel('gemini-2.5-flash') 
+
+# ==========================================
+# 3. FILE UPLOAD CONFIGURATION
+# ==========================================
 UPLOAD_FOLDER = 'static/uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ==========================================
-# 1. SUPABASE CLOUD CONNECTION
+# 4. SUPABASE CLOUD CONNECTION
 # ==========================================
-# PASTE YOUR SUPABASE URL AND KEY HERE:
-SUPABASE_URL = "https://twsknocrijyjaveewlhd.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3c2tub2NyaWp5amF2ZWV3bGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjQxNzcsImV4cCI6MjA5MjA0MDE3N30.S5bKO3urNsPx7BEzHTKASlxEC5k-rttLjzrJ-T9_OUE"
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==========================================
+# ... (The rest of your encryption, email setup, and routes go below here!) ...
+
+# ==========================================
 # 2. ENCRYPTION SETUP (AES-256 Fernet)
 # ==========================================
-ENCRYPTION_KEY = b'v_T_6Rk_Q7J5-XkG8J-G9b_rP9M-K_6Qv_T_6Rk_Q7I=' 
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY").encode()
 cipher_suite = Fernet(ENCRYPTION_KEY)
 
 # ==========================================
@@ -46,9 +62,9 @@ LOCKOUT_TIME = 300
 
 # --- GMAIL SMTP CONFIGURATION ---
 # The Gmail address that will SEND the 2FA codes
-SENDER_EMAIL = "jeroenelaltamera383@gmail.com" 
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
 # The 16-letter Google App Password (NO SPACES)
-SENDER_PASSWORD = "xlxf cxwr kfco lzpv" 
+SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
 # ==========================================
 # 4. HELPER FUNCTIONS
@@ -401,6 +417,28 @@ def protocol_zero():
     log_action("CRITICAL: PROTOCOL ZERO INITIATED. ALL INTELLIGENCE INCINERATED.")
     flash("PROTOCOL ZERO EXECUTED. DATABASE WIPED.")
     return redirect('/admin_view')
+
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    # Security check: only logged-in users can talk to the AI
+    if 'username' not in session:
+        return {"reply": "UNAUTHORIZED ACCESS."}, 401
+        
+    data = request.get_json()
+    user_message = data.get("message", "")
+    
+    if not GEMINI_API_KEY:
+        return {"reply": "SYSTEM ERROR: AI Core offline. API Key missing."}
+
+    try:
+        # Give the AI its tactical persona before sending the user's question
+        tactical_prompt = f"You are OSIRIS, a highly advanced tactical AI assistant for a cybersecurity command center. Respond concisely, professionally, and with a slightly militaristic/cyber tone to the following query. Query: {user_message}"
+        
+        response = ai_model.generate_content(tactical_prompt)
+        return {"reply": response.text}
+    except Exception as e:
+        print(f"❌ CRITICAL AI ERROR: {e}") # <-- ADD THIS LINE
+        return {"reply": f"CONNECTION FAILED: Neural link severed."}
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>OSIRIS Command Center</title>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -1795,8 +1798,8 @@
       </div>
       <div id="chat-body">
         <div class="chat-msg msg-ai">
-          SYSTEM ONLINE. I am OSIRIS, your Tactical AI Assistant. Type 'help'
-          for commands.
+          SYSTEM ONLINE. I am OSIRIS, your Tactical AI Assistant. How can I
+          assist you?
         </div>
       </div>
       <div class="chat-input-area">
@@ -1946,42 +1949,64 @@
         chatWidget.classList.toggle("minimized");
         icon.innerText = chatWidget.classList.contains("minimized") ? "▲" : "▼";
       }
-      function sendChatMessage() {
+
+      // UPDATED: Live AI Connection
+      async function sendChatMessage() {
         const inputField = document.getElementById("ai-input");
-        const text = inputField.value.trim().toLowerCase();
+        const text = inputField.value.trim();
         if (!text) return;
+
+        // Print the user's message
         appendMessage("msg-user", text.toUpperCase());
         inputField.value = "";
-        setTimeout(() => {
-          let response = generateAIResponse(text);
-          appendMessage("msg-ai", response);
-        }, 500);
+
+        // Create a temporary "Processing..." message
+        const chatBody = document.getElementById("chat-body");
+        const loadingDiv = document.createElement("div");
+        loadingDiv.className = "chat-msg msg-ai";
+        loadingDiv.innerText = "PROCESSING UPLINK...";
+        chatBody.appendChild(loadingDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        try {
+          // Send the text to our Python backend
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text }),
+          });
+          const data = await response.json();
+
+          // Remove the "Processing..." text
+          chatBody.removeChild(loadingDiv);
+
+          // Print the real AI response
+          appendMessage("msg-ai", data.reply);
+        } catch (error) {
+          chatBody.removeChild(loadingDiv);
+          appendMessage("msg-ai", "CRITICAL ERROR: Unable to reach AI Core.");
+        }
       }
+
+      // Allow pressing 'Enter' to send
       document
         .getElementById("ai-input")
         ?.addEventListener("keypress", function (e) {
           if (e.key === "Enter") sendChatMessage();
         });
+
       function appendMessage(className, text) {
         const chatBody = document.getElementById("chat-body");
         const msgDiv = document.createElement("div");
         msgDiv.className = `chat-msg ${className}`;
-        msgDiv.innerText = text;
+
+        // Formats the text nicely if the AI uses bolding or lists
+        msgDiv.innerHTML = text
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\n/g, "<br>");
+
         chatBody.appendChild(msgDiv);
         chatBody.scrollTop = chatBody.scrollHeight;
-      }
-      function generateAIResponse(query) {
-        if (query.includes("help"))
-          return "AVAILABLE COMMANDS: 'status', 'encryption', 'threats', 'clearance'.";
-        if (query.includes("status"))
-          return "SYSTEM STATUS: UPLINK SECURE. Supabase Cloud DB active.";
-        if (query.includes("encryption"))
-          return "SECURITY PROTOCOL: All data secured using Python Cryptography (Fernet Symmetric AES-256).";
-        if (query.includes("threat") || query.includes("tamper"))
-          return "INTEGRITY CHECK: Hashlib (SHA-256) is monitoring records for tampering.";
-        if (query.includes("clearance") || query.includes("admin"))
-          return "ACCESS CONTROL: Admin clearance required to purge compromised records.";
-        return "UNRECOGNIZED QUERY. Data insufficient. Type 'help' for tactical options.";
       }
 
       // 8. DATA ANALYTICS: Chart.js Integration for Threat Tab
@@ -2182,6 +2207,78 @@
           eyeIcon.style.color = "var(--text-muted)";
         }
       }
+      // 11. 3D TACTICAL HOLOGRAM (Three.js)
+      document.addEventListener("DOMContentLoaded", function () {
+        const container = document.getElementById("sectorMap");
+        // Only run if the map exists and Three.js successfully loaded
+        if (!container || typeof THREE === "undefined") return;
+
+        // 1. Create the Scene and Camera
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(
+          75,
+          container.clientWidth / container.clientHeight,
+          0.1,
+          1000,
+        );
+        camera.position.z = 5;
+
+        // 2. Create the Renderer (Transparent background)
+        const renderer = new THREE.WebGLRenderer({
+          alpha: true,
+          antialias: true,
+        });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+
+        // Position it absolutely so it sits inside the map behind the dots
+        renderer.domElement.style.position = "absolute";
+        renderer.domElement.style.top = "0";
+        renderer.domElement.style.left = "0";
+        renderer.domElement.style.zIndex = "0";
+        container.appendChild(renderer.domElement);
+
+        // 3. Create the Outer Blue Radar Sphere
+        const geometry = new THREE.SphereGeometry(2.8, 16, 16);
+        const material = new THREE.MeshBasicMaterial({
+          color: 0x3b82f6, // O.S.I.R.I.S. Blue
+          wireframe: true,
+          transparent: true,
+          opacity: 0.2,
+        });
+        const sphere = new THREE.Mesh(geometry, material);
+        scene.add(sphere);
+
+        // 4. Create the Inner Green Core Sphere
+        const innerGeo = new THREE.SphereGeometry(1.5, 8, 8);
+        const innerMat = new THREE.MeshBasicMaterial({
+          color: 0x10b981, // Verified Green
+          wireframe: true,
+          transparent: true,
+          opacity: 0.15,
+        });
+        const innerSphere = new THREE.Mesh(innerGeo, innerMat);
+        scene.add(innerSphere);
+
+        // 5. The Animation Loop (Spins the spheres 60 frames per second)
+        function animate() {
+          requestAnimationFrame(animate);
+          sphere.rotation.y += 0.002;
+          sphere.rotation.x += 0.001;
+          innerSphere.rotation.y -= 0.004;
+          innerSphere.rotation.z += 0.002;
+          renderer.render(scene, camera);
+        }
+        animate();
+
+        // 6. Handle Window Resizing
+        window.addEventListener("resize", () => {
+          if (container) {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+          }
+        });
+      });
     </script>
   </body>
 </html>
