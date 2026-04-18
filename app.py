@@ -1,130 +1,114 @@
-# app.py
-from flask import Flask, render_template, request, session, redirect, flash
-import sqlite3
+from flask import Flask, render_template, request, redirect, session, flash
 import hashlib
-import secrets
-from cryptography.fernet import Fernet
-import os
 from datetime import datetime
 import random
-import time # <-- ADD THIS
-
-
-# --- ANTI-BRUTE FORCE TRACKER ---
-failed_attempts = {}
-LOCKOUT_TIME = 300 # 5 minutes in seconds
+import time
+import os
+from werkzeug.utils import secure_filename
+from cryptography.fernet import Fernet
+from supabase import create_client, Client
+import smtplib
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
+app.secret_key = "osiris_super_secret_session_key"
+
+# --- FILE UPLOAD CONFIGURATION ---
+UPLOAD_FOLDER = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # ==========================================
-# SECURITY REQUIREMENT 5: Secure Token Generation
+# 1. SUPABASE CLOUD CONNECTION
 # ==========================================
-# We save the session key to a file so Flask doesn't log you out 
-# when SQLite updates the database file (Protocol Zero fix).
-if not os.path.exists("session.key"):
-    with open("session.key", "w") as key_file:
-        key_file.write(secrets.token_hex(32))
+# PASTE YOUR SUPABASE URL AND KEY HERE:
+SUPABASE_URL = "https://twsknocrijyjaveewlhd.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3c2tub2NyaWp5amF2ZWV3bGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjQxNzcsImV4cCI6MjA5MjA0MDE3N30.S5bKO3urNsPx7BEzHTKASlxEC5k-rttLjzrJ-T9_OUE"
 
-with open("session.key", "r") as key_file:
-    app.secret_key = key_file.read()
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # ==========================================
-# SECURITY REQUIREMENT 3: Data Encryption & Decryption
+# 2. ENCRYPTION SETUP (AES-256 Fernet)
 # ==========================================
-if not os.path.exists("secret.key"):
-    with open("secret.key", "wb") as key_file:
-        key_file.write(Fernet.generate_key())
+ENCRYPTION_KEY = b'v_T_6Rk_Q7J5-XkG8J-G9b_rP9M-K_6Qv_T_6Rk_Q7I=' 
+cipher_suite = Fernet(ENCRYPTION_KEY)
 
-with open("secret.key", "rb") as key_file:
-    cipher_suite = Fernet(key_file.read())
+# ==========================================
+# 3. SECURITY TRACKERS & EMAIL SETUP
+# ==========================================
+failed_attempts = {}
+LOCKOUT_TIME = 300 
 
-# --- Database Setup (SQLite) ---
-def init_db():
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    # Create Tables
-    c.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, username TEXT, password_hash TEXT, role TEXT)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY, agent_name TEXT, sector TEXT, threat_level TEXT, encrypted_data BYTES, integrity_hash TEXT)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS audit_logs (id INTEGER PRIMARY KEY, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, action TEXT)''')
-    
-    # Create default accounts if they don't exist
-    c.execute("SELECT * FROM users WHERE username='admin'")
-    if not c.fetchone():
-        # SECURITY REQUIREMENT 1: Password Hashing
-        admin_pw_hash = hashlib.sha256(b"command123").hexdigest()
-        c.execute("INSERT INTO users (username, password_hash, role) VALUES ('admin', ?, 'admin')", (admin_pw_hash,))
-        
-        agent_pw_hash = hashlib.sha256(b"agent123").hexdigest()
-        c.execute("INSERT INTO users (username, password_hash, role) VALUES ('agent_alpha', ?, 'agent')", (agent_pw_hash,))
-        
-        c.execute("INSERT INTO audit_logs (action) VALUES ('SYSTEM INITIALIZED. Default accounts created.')")
-        
-    conn.commit()
-    conn.close()
+# --- GMAIL SMTP CONFIGURATION ---
+# The Gmail address that will SEND the 2FA codes
+SENDER_EMAIL = "jeroenelaltamera383@gmail.com" 
+# The 16-letter Google App Password (NO SPACES)
+SENDER_PASSWORD = "xlxf cxwr kfco lzpv" 
 
-init_db()
-
-# Helper function to write to the Audit Log
+# ==========================================
+# 4. HELPER FUNCTIONS
+# ==========================================
 def log_action(action_text):
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO audit_logs (action) VALUES (?)", (action_text,))
-    conn.commit()
-    conn.close()
+    """Writes a secure audit log directly to the Supabase cloud."""
+    try:
+        supabase.table('audit_logs').insert({"action": action_text}).execute()
+    except:
+        pass
 
-# ==========================================
-# LOCAL "AI" THREAT ANALYZER
-# ==========================================
-def analyze_threat_level(intelligence_text):
-    text = intelligence_text.lower()
-    score = 0
-    tags = []
+def send_2fa_email(recipient_email, pin, username):
+    """Transmits the 2FA PIN via secure SMTP email to the linked address."""
+    print("\n" + "="*45)
+    print(f"🔐 UPLINK INTERCEPTED: 2FA Token Generated")
+    print(f"👤 Operative: {username.upper()}")
+    print(f"🔑 SECURE PIN: {pin}")
     
-    critical_keywords = ['casualties', 'ambush', 'hostile', 'firefight', 'breach', 'bomb', 'enemy']
-    urgent_keywords = ['medical', 'supplies', 'evac', 'shortage', 'civilians']
-    
-    for word in critical_keywords:
-        if word in text:
-            score += 35
-            tags.append("COMBAT")
-            
-    for word in urgent_keywords:
-        if word in text:
-            score += 20
-            tags.append("LOGISTICS")
-            
-    if score > 100: score = 100
-    if score == 0: tags.append("ROUTINE")
-    
-    if score >= 70:
-        recommendation = "IMMEDIATE RESPONSE REQUIRED"
-    elif score >= 40:
-        recommendation = "DISPATCH SUPPORT"
-    else:
-        recommendation = "MONITOR SITUATION"
+    if not recipient_email:
+        print("⚠️ WARNING: No email address linked to this account!")
+        print("Fallback: Using terminal display for PIN.")
+        print("="*45 + "\n")
+        return False
         
-    return score, ", ".join(set(tags)), recommendation
+    msg = MIMEText(f"OPERATIVE AUTHORIZATION REQUIRED.\n\nYour OSIRIS Command Center secure connection PIN is: {pin}\n\nThis token will expire shortly. Do not share this code with anyone.")
+    msg['Subject'] = 'OSIRIS Security: 2FA Token'
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = recipient_email
+
+    try:
+        # Connect to Gmail's secure SMTP server
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
+        print(f"📧 UPLINK SUCCESS: Email dispatched to {recipient_email}")
+        print("="*45 + "\n")
+        return True
+    except Exception as e:
+        print(f"📧 UPLINK FAILED: Could not send email. Error: {e}")
+        print("="*45 + "\n")
+        return False
 
 # ==========================================
-# ROUTES & LOGIC
+# 5. ROUTES & LOGIC
 # ==========================================
 
 @app.route('/')
 def home():
     if 'username' in session:
-        # BUG FIX: If an admin goes to the homepage, force them to the database view!
-        if session.get('role') == 'admin':
+        if session['role'] == 'admin':
             return redirect('/admin_view')
-        return render_template('index.html', logged_in=True, role=session['role'], username=session['username'])
+            
+        # Fetch current operative's email to display in Settings
+        user_res = supabase.table('users').select('email').eq('username', session['username']).execute()
+        current_email = user_res.data[0].get('email') if user_res.data else None
+        
+        return render_template('index.html', logged_in=True, username=session['username'], role=session['role'], current_email=current_email)
     return render_template('index.html', logged_in=False)
 
-# SECURITY REQUIREMENT 2: Login Authentication & Anti-Brute Force
 @app.route('/login', methods=['POST'])
 def login():
     username = request.form['username']
     password = request.form['password']
     
-    # 1. ANTI-BRUTE FORCE CHECK (Check if user is already locked out)
+    # 1. ANTI-BRUTE FORCE CHECK
     if username in failed_attempts:
         attempts, lockout_start = failed_attempts[username]
         if attempts >= 3:
@@ -133,31 +117,27 @@ def login():
                 flash("CRITICAL: Account locked due to multiple failed attempts. Try again in 5 minutes.")
                 return redirect('/')
             else:
-                failed_attempts.pop(username, None) # Time expired, unlock them
+                failed_attempts.pop(username, None)
 
-    # 2. Proceed with checking credentials
+    # 2. Hash password and check Supabase Database (Fetch Role AND Email)
     attempt_hash = hashlib.sha256(password.encode()).hexdigest()
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    c.execute("SELECT role FROM users WHERE username=? AND password_hash=?", (username, attempt_hash))
-    user = c.fetchone()
-    conn.close()
+    response = supabase.table('users').select('role, email').eq('username', username).eq('password_hash', attempt_hash).execute()
     
-    if user:
-        # Success! Clear any previous failed attempts
+    if len(response.data) > 0: 
+        user_data = response.data[0]
+        user_role = user_data['role']
+        user_email = user_data.get('email') # Pull the linked email!
+        
         failed_attempts.pop(username, None) 
         
-        # Generate a random 6-digit PIN for 2FA
+        # Generate the PIN
         pin = str(random.randint(100000, 999999))
         session['pending_user'] = username
-        session['pending_role'] = user[0]
+        session['pending_role'] = user_role
         session['2fa_pin'] = pin
         
-        print("\n" + "="*45)
-        print(f"🔐 UPLINK INTERCEPTED: 2FA Token Generated")
-        print(f"👤 Operative: {username.upper()}")
-        print(f"🔑 SECURE PIN: {pin}")
-        print("="*45 + "\n")
+        # Transmit the PIN via Email
+        send_2fa_email(user_email, pin, username)
         
         log_action(f"2FA token generated for {username}")
         return render_template('index.html', requires_2fa=True, pending_user=username)
@@ -169,7 +149,6 @@ def login():
             failed_attempts[username][0] += 1
             failed_attempts[username][1] = time.time()
             
-        # Check if this failure triggered the lockout
         if failed_attempts[username][0] >= 3:
             log_action(f"CRITICAL: Maximum failed logins reached for {username}. Account locked.")
             flash("CRITICAL: Maximum attempts reached. Account locked for 5 minutes.")
@@ -178,17 +157,15 @@ def login():
             flash(f"System: Authentication Failed. Attempt {failed_attempts[username][0]} of 3.")
         return redirect('/')
 
-# --- NEW ROUTE FOR 2FA VERIFICATION ---
 @app.route('/verify_2fa', methods=['POST'])
 def verify_2fa():
     entered_pin = request.form.get('pin')
     real_pin = session.get('2fa_pin')
     
     if entered_pin == real_pin:
-        # 2FA Success! Log them in for real.
         session['username'] = session.pop('pending_user')
         session['role'] = session.pop('pending_role')
-        session.pop('2fa_pin') # Clear the PIN for security
+        session.pop('2fa_pin', None) 
         
         log_action(f"Successful 2FA login: {session['username']}")
         
@@ -197,175 +174,173 @@ def verify_2fa():
         else:
             return redirect('/')
     else:
-        # 2FA Failed
         log_action(f"WARNING: Failed 2FA attempt for {session.get('pending_user')}")
         flash("CRITICAL: Invalid 2FA Token. Access Denied.")
-        # Send them back to the 2FA screen to try again
         return render_template('index.html', requires_2fa=True, pending_user=session.get('pending_user'))
 
 @app.route('/logout')
 def logout():
-    log_action(f"Session terminated: {session.get('username')}")
-    session.clear() 
+    user = session.get('username', 'Unknown')
+    session.clear()
+    log_action(f"User {user} terminated session.")
+    flash("Session Terminated Securely.")
+    return redirect('/')
+
+@app.route('/update_email', methods=['POST'])
+def update_email():
+    if 'username' not in session:
+        return redirect('/')
+        
+    new_email = request.form.get('email')
+    
+    try:
+        # Save the new email to Supabase for this specific user
+        supabase.table('users').update({'email': new_email}).eq('username', session['username']).execute()
+        log_action(f"Operative {session['username']} updated their secure email link.")
+        flash("Communication Uplink Secured. Email updated successfully.")
+    except Exception as e:
+        flash("Error: Could not link email to database.")
+        
+    if session.get('role') == 'admin':
+        return redirect('/admin_view')
     return redirect('/')
 
 @app.route('/submit_report', methods=['POST'])
 def submit_report():
-    if session.get('role') != 'agent':
-        return "Access Denied", 403
-
+    if 'username' not in session or session['role'] != 'agent':
+        return redirect('/')
+        
     sector = request.form['sector']
     threat_level = request.form['threat_level']
-    raw_intelligence = request.form['intelligence']
+    raw_intel = request.form['intelligence']
     
-    # Run AI Analytics
-    ai_score, ai_tags, ai_rec = analyze_threat_level(raw_intelligence)
-    enhanced_intelligence = f"[{ai_tags}] {raw_intelligence} | AI REC: {ai_rec}"
+    # FILE UPLOAD LOGIC
+    file = request.files.get('attachment')
+    attachment_path = None
     
-    # Encrypt and Hash
-    encrypted_payload = cipher_suite.encrypt(enhanced_intelligence.encode())
-    payload_hash = hashlib.sha256(enhanced_intelligence.encode()).hexdigest()
+    if file and file.filename != '':
+        filename = secure_filename(file.filename)
+        unique_filename = f"{int(time.time())}_{filename}"
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        file.save(filepath)
+        attachment_path = f"/static/uploads/{unique_filename}"
     
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO reports (agent_name, sector, threat_level, encrypted_data, integrity_hash) VALUES (?, ?, ?, ?, ?)", 
-              (session['username'], sector, threat_level, encrypted_payload, payload_hash))
-    conn.commit()
-    conn.close()
+    encrypted_payload = cipher_suite.encrypt(raw_intel.encode()).decode()
+    integrity_hash = hashlib.sha256(encrypted_payload.encode()).hexdigest()
     
-    log_action(f"New encrypted report transmitted by {session['username']} for {sector}. AI Threat Score: {ai_score}%")
-    flash(f"Report Transmitted Securely. AI Threat Score: {ai_score}%")
+    supabase.table('reports').insert({
+        'agent': session['username'],
+        'sector': sector,
+        'threat_level': threat_level,
+        'encrypted_intel': encrypted_payload,
+        'hash_checksum': integrity_hash,
+        'attachment': attachment_path
+    }).execute()
+    
+    log_action(f"Encrypted intelligence transmitted by {session['username']} for {sector}")
+    flash("Transmission Successful. Payload and Files Secured.")
     return redirect('/')
 
 @app.route('/admin_view')
 def admin_view():
     if session.get('role') != 'admin':
-        return "Access Denied", 403
+        return redirect('/')
         
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
+    reports_response = supabase.table('reports').select('*').order('timestamp', desc=True).execute()
+    raw_reports = reports_response.data
     
-    # Fetch newest reports first
-    c.execute("SELECT * FROM reports ORDER BY id DESC")
-    reports = c.fetchall()
+    processed_reports = []
     
-    # Fetch last 10 audit logs
-    c.execute("SELECT timestamp, action FROM audit_logs ORDER BY id DESC LIMIT 10")
-    audit_logs = c.fetchall()
-    conn.close()
-    
-    decrypted_reports = []
-    for rep in reports:
-        rep_id, agent, sector, threat, enc_data, saved_hash = rep
-        try:
-            # Decrypt and Verify Integrity
-            decrypted_text = cipher_suite.decrypt(enc_data).decode()
-            current_hash = hashlib.sha256(decrypted_text.encode()).hexdigest()
-            status = "✔️ VERIFIED" if current_hash == saved_hash else "❌ TAMPERED"
-        except Exception:
-            decrypted_text = "[DECRYPTION FAILED]"
-            status = "❌ DATA CORRUPTED"
-
-        decrypted_reports.append({
-            'id': rep_id, 'agent': agent, 'sector': sector, 'threat': threat, 
-            'encrypted_preview': enc_data[:15].decode('utf-8', errors='ignore') + "...",
-            'decrypted_text': decrypted_text, 'status': status
-        })
+    for report in raw_reports:
+        current_hash = hashlib.sha256(report['encrypted_intel'].encode()).hexdigest()
         
-    log_action("Admin accessed the Command Center Dashboard.")
-    return render_template('index.html', logged_in=True, role='admin', reports=decrypted_reports, audit_logs=audit_logs, username=session['username'])
-
-@app.route('/purge/<int:report_id>', methods=['POST'])
-def purge_report(report_id):
-    if session.get('role') != 'admin':
-        return "Access Denied", 403
+        if current_hash == report['hash_checksum']:
+            try:
+                decrypted = cipher_suite.decrypt(report['encrypted_intel'].encode()).decode()
+                report['decrypted_text'] = decrypted
+                report['status'] = 'VERIFIED'
+            except:
+                report['decrypted_text'] = "[DECRYPTION FAILED - KEY MISMATCH]"
+                report['status'] = 'TAMPERED'
+        else:
+            report['decrypted_text'] = "[CRITICAL: DATA TAMPERING DETECTED]"
+            report['status'] = 'TAMPERED'
+            
+        processed_reports.append(report)
         
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    c.execute("DELETE FROM reports WHERE id=?", (report_id,))
-    conn.commit()
-    conn.close()
+    logs_response = supabase.table('audit_logs').select('*').order('timestamp', desc=True).limit(50).execute()
+    audit_logs = [(log['timestamp'], log['action']) for log in logs_response.data]
+        
+    agents_response = supabase.table('users').select('id, username').eq('role', 'agent').execute()
+    agents = agents_response.data
     
-    log_action(f"ADMIN ACTION: Purged compromised report ID #{report_id} from database.")
-    flash("Compromised data purged from system successfully.")
-    return redirect('/admin_view')
+    # Fetch Admin's Email
+    user_res = supabase.table('users').select('email').eq('username', session['username']).execute()
+    current_email = user_res.data[0].get('email') if user_res.data else None
+        
+    return render_template('index.html', 
+                           logged_in=True, 
+                           username=session['username'], 
+                           role=session['role'],
+                           reports=processed_reports,
+                           audit_logs=audit_logs,
+                           agents=agents,
+                           current_email=current_email)
 
-# ==========================================
-# ADMIN FUNCTION: CREATE NEW AGENT
-# ==========================================
 @app.route('/create_agent', methods=['POST'])
 def create_agent():
-    # Enforce strict access control
-    if session.get('role') != 'admin':
-        return "Access Denied", 403
-        
-    new_username = request.form['new_username']
-    new_password = request.form['new_password']
-    
-    # Hash the new password securely
-    hashed_password = hashlib.sha256(new_password.encode()).hexdigest()
-    
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    
-    try:
-        # Check if user already exists
-        c.execute("SELECT * FROM users WHERE username=?", (new_username,))
-        if c.fetchone():
-            flash(f"Registration Failed: Username '{new_username}' already exists.")
-        else:
-            c.execute("INSERT INTO users (username, password_hash, role) VALUES (?, ?, 'agent')", 
-                      (new_username, hashed_password))
-            conn.commit()
-            log_action(f"ADMIN COMMAND: Registered new field operative -> {new_username}")
-            flash(f"Operative '{new_username}' registered successfully.")
-    except Exception as e:
-        flash(f"Database Error: {e}")
-    finally:
-        conn.close()
-        
-    return redirect('/admin_view')
-# ==========================================
-# PROTOCOL ZERO: EMERGENCY DATABASE WIPE
-# ==========================================
-@app.route('/protocol_zero', methods=['POST'])
-def protocol_zero():
-    if session.get('role') != 'admin':
-        return "Access Denied", 403
-        
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    
-    # Incinerate all intelligence and history
-    c.execute("DELETE FROM reports")
-    c.execute("DELETE FROM audit_logs")
-    
-    conn.commit()
-    conn.close()
-    
-    # Leave a single chilling log
-    log_action("CRITICAL: PROTOCOL ZERO INITIATED. ALL INTELLIGENCE AND SYSTEM LOGS INCINERATED.")
-    flash("PROTOCOL ZERO EXECUTED. DATABASE WIPED.")
-    
-    return redirect('/admin_view')
-
-# --- NEW ROUTE: DELETE ANY REPORT ---
-@app.route('/delete_report/<int:report_id>', methods=['POST'])
-def delete_report(report_id):
     if session.get('role') != 'admin':
         return redirect('/')
         
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    c.execute("DELETE FROM reports WHERE id=?", (report_id,))
-    conn.commit()
-    conn.close()
+    new_user = request.form['new_username']
+    new_pass = request.form['new_password']
+    hashed_pass = hashlib.sha256(new_pass.encode()).hexdigest()
     
-    log_action(f"Admin manually deleted report ID: {report_id}")
-    flash("Record successfully incinerated from database.")
+    try:
+        supabase.table('users').insert({
+            'username': new_user,
+            'password_hash': hashed_pass,
+            'role': 'agent'
+        }).execute()
+        log_action(f"Admin provisioned new operative access: {new_user}")
+        flash(f"Success: Operative {new_user} provisioned.")
+    except Exception as e:
+        flash("Error: Operative ID may already exist.")
+        
     return redirect('/admin_view')
 
-# --- NEW ROUTE: UPDATE & RE-ENCRYPT REPORT ---
+@app.route('/edit_agent', methods=['POST'])
+def edit_agent():
+    if session.get('role') != 'admin':
+        return redirect('/')
+        
+    agent_id = request.form['agent_id']
+    new_username = request.form['username']
+    new_password = request.form['password']
+    
+    update_data = {'username': new_username}
+    if new_password.strip():
+        update_data['password_hash'] = hashlib.sha256(new_password.encode()).hexdigest()
+        
+    try:
+        supabase.table('users').update(update_data).eq('id', agent_id).execute()
+        log_action(f"Admin updated operative ID: {agent_id}")
+        flash("Operative profile updated successfully.")
+    except Exception as e:
+        flash("Error: Username may already be in use.")
+        
+    return redirect('/admin_view')
+
+@app.route('/delete_agent/<int:agent_id>', methods=['POST'])
+def delete_agent(agent_id):
+    if session.get('role') != 'admin':
+        return redirect('/')
+        
+    supabase.table('users').delete().eq('id', agent_id).execute()
+    log_action(f"Admin revoked access and deleted operative ID: {agent_id}")
+    flash("Operative access permanently revoked.")
+    return redirect('/admin_view')
+
 @app.route('/edit_report', methods=['POST'])
 def edit_report():
     if session.get('role') != 'admin':
@@ -376,26 +351,51 @@ def edit_report():
     new_threat = request.form['threat_level']
     raw_intel = request.form['intelligence']
     
-    # CRITICAL SECURITY STEP: We must re-encrypt and re-hash the new edit
-    # so the integrity system doesn't flag it as tampered!
     new_encrypted_payload = cipher_suite.encrypt(raw_intel.encode()).decode()
     new_integrity_hash = hashlib.sha256(new_encrypted_payload.encode()).hexdigest()
     
-    conn = sqlite3.connect('intelligence.db')
-    c = conn.cursor()
-    c.execute("""
-        UPDATE reports 
-        SET sector=?, threat_level=?, encrypted_intel=?, hash_checksum=?
-        WHERE id=?
-    """, (new_sector, new_threat, new_encrypted_payload, new_integrity_hash, report_id))
-    conn.commit()
-    conn.close()
+    supabase.table('reports').update({
+        'sector': new_sector,
+        'threat_level': new_threat,
+        'encrypted_intel': new_encrypted_payload,
+        'hash_checksum': new_integrity_hash
+    }).eq('id', report_id).execute()
     
     log_action(f"Admin updated and re-encrypted report ID: {report_id}")
     flash("Record updated successfully. New encryption keys applied.")
     return redirect('/admin_view')
 
+@app.route('/delete_report/<int:report_id>', methods=['POST'])
+def delete_report(report_id):
+    if session.get('role') != 'admin':
+        return redirect('/')
+        
+    supabase.table('reports').delete().eq('id', report_id).execute()
+    log_action(f"Admin manually deleted report ID: {report_id}")
+    flash("Record successfully incinerated from database.")
+    return redirect('/admin_view')
+
+@app.route('/purge/<int:report_id>', methods=['POST'])
+def purge_report(report_id):
+    if session.get('role') != 'admin':
+        return redirect('/')
+        
+    supabase.table('reports').delete().eq('id', report_id).execute()
+    log_action(f"SECURITY PURGE: Admin destroyed compromised report ID: {report_id}")
+    flash("Compromised Data Purged from System.")
+    return redirect('/admin_view')
+
+@app.route('/protocol_zero', methods=['POST'])
+def protocol_zero():
+    if session.get('role') != 'admin':
+        return redirect('/')
+        
+    supabase.table('reports').delete().neq('id', 0).execute()
+    supabase.table('audit_logs').delete().neq('id', 0).execute()
+    
+    log_action("CRITICAL: PROTOCOL ZERO INITIATED. ALL INTELLIGENCE INCINERATED.")
+    flash("PROTOCOL ZERO EXECUTED. DATABASE WIPED.")
+    return redirect('/admin_view')
+
 if __name__ == '__main__':
-    
-    
-    app.run(debug=True, port=5000)
+    app.run(debug=True)

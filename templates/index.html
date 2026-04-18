@@ -461,6 +461,7 @@
     </style>
   </head>
   <body>
+    {% if logged_in %}
     <div class="sidebar" id="main-sidebar">
       <div class="sidebar-header">
         <div class="sidebar-brand hide-on-collapse">
@@ -498,7 +499,6 @@
         </button>
       </div>
 
-      {% if logged_in %}
       <div
         class="nav-item active"
         id="nav-dashboard"
@@ -527,7 +527,9 @@
           "
           alt="Uplink Icon"
         />
-        <span class="hide-on-collapse">Comm Uplink</span>
+        <span class="hide-on-collapse">
+          {% if role == 'admin' %}Operatives{% else %}Comm Uplink{% endif %}
+        </span>
       </div>
 
       {% if role == 'admin' %}
@@ -602,8 +604,8 @@
           <span class="hide-on-collapse">Terminate Session</span>
         </button>
       </form>
-      {% endif %}
     </div>
+    {% endif %}
 
     <div class="main-content">
       <div class="topbar">
@@ -755,15 +757,60 @@
               required
               placeholder="Enter Username"
             />
+
             <label style="font-size: 12px; color: var(--text-muted)"
               >Passphrase</label
             >
-            <input
-              type="password"
-              name="password"
-              required
-              placeholder="••••••••"
-            />
+            <div
+              style="
+                position: relative;
+                display: flex;
+                align-items: center;
+                margin-top: 5px;
+                margin-bottom: 15px;
+              "
+            >
+              <input
+                type="password"
+                id="login-password"
+                name="password"
+                required
+                placeholder="••••••••"
+                style="margin: 0; padding-right: 40px; width: 100%"
+              />
+              <button
+                type="button"
+                onclick="togglePassword('login-password', 'eye-icon-login')"
+                style="
+                  position: absolute;
+                  right: 10px;
+                  background: transparent;
+                  border: none;
+                  padding: 0;
+                  width: auto;
+                  color: var(--text-muted);
+                  cursor: pointer;
+                  display: flex;
+                "
+                title="Show/Hide Password"
+              >
+                <svg
+                  id="eye-icon-login"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+
             <button type="submit">Establish Secure Connection</button>
           </form>
         </div>
@@ -789,7 +836,12 @@
       <div id="view-uplink" class="dashboard-grid" style="display: none">
         <div class="card col-8">
           <h3 class="card-title">Transmit Intelligence</h3>
-          <form action="/submit_report" method="POST">
+
+          <form
+            action="/submit_report"
+            method="POST"
+            enctype="multipart/form-data"
+          >
             <div style="display: flex; gap: 10px">
               <div style="flex-grow: 1">
                 <label style="font-size: 12px; color: var(--text-muted)"
@@ -825,6 +877,7 @@
               <option value="ELEVATED">Hostile Activity</option>
               <option value="CRITICAL">Immediate Support</option>
             </select>
+
             <label style="font-size: 12px; color: var(--text-muted)"
               >Payload</label
             >
@@ -834,6 +887,23 @@
               required
               placeholder="Enter raw intelligence data..."
             ></textarea>
+
+            <label style="font-size: 12px; color: var(--text-muted)"
+              >Secure Attachment (Images, PDFs, Docs) - Optional</label
+            >
+            <input
+              type="file"
+              name="attachment"
+              accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt"
+              style="
+                padding: 8px;
+                background: transparent;
+                border: 1px dashed var(--border-color);
+                color: var(--text-main);
+                cursor: pointer;
+              "
+            />
+
             <button type="submit">Encrypt & Transmit</button>
           </form>
         </div>
@@ -877,19 +947,50 @@
           </p>
         </div>
       </div>
+
       <div id="view-settings" class="dashboard-grid" style="display: none">
         <div class="card col-12">
           <h3 class="card-title">Operative Settings</h3>
-          <p style="color: var(--text-muted)">
-            Your cryptographic keys are managed remotely by the Command Center.
-            Local settings are locked.
+          <p style="color: var(--text-muted); margin-bottom: 30px">
+            Manage your local command preferences and secure communication
+            links.
           </p>
+
+          <h4 style="color: var(--text-main); margin-bottom: 5px">
+            Secure Email Link
+          </h4>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 0">
+            Receive 2FA tokens directly to your encrypted inbox. Without this,
+            remote login will fail.
+          </p>
+
+          <form action="/update_email" method="POST" style="max-width: 400px">
+            <input
+              type="email"
+              name="email"
+              placeholder="operative@secure-link.net"
+              required
+              value="{{ current_email if current_email else '' }}"
+            />
+            <button type="submit">Link Email Address</button>
+          </form>
+
+          <div style="margin-top: 15px; font-size: 13px">
+            Connection Status: {% if current_email %}
+            <span style="color: var(--accent-green); font-weight: bold"
+              >[ VERIFIED: {{ current_email }} ]</span
+            >
+            {% else %}
+            <span style="color: var(--accent-red); font-weight: bold"
+              >[ UNLINKED: 2FA DISABLED ]</span
+            >
+            {% endif %}
+          </div>
         </div>
       </div>
       {% endif %} {% if logged_in and role == 'admin' %}
-
       <div id="view-dashboard" class="dashboard-grid">
-        <div class="card col-3">
+        <div class="card col-3 hide-on-search">
           <div class="card-title">
             Total Records
             <img
@@ -902,7 +1003,7 @@
           <div class="stat-value">{{ reports|length }}</div>
           <div class="stat-trend positive">Active in Database</div>
         </div>
-        <div class="card col-3">
+        <div class="card col-3 hide-on-search">
           <div class="card-title">
             Encryption
             <img
@@ -915,7 +1016,7 @@
           <div class="stat-value">AES-256</div>
           <div class="stat-trend positive">Fernet Active</div>
         </div>
-        <div class="card col-3">
+        <div class="card col-3 hide-on-search">
           <div class="card-title">
             Integrity Hash
             <img
@@ -928,7 +1029,7 @@
           <div class="stat-value">SHA-256</div>
           <div class="stat-trend positive">Monitoring Changes</div>
         </div>
-        <div class="card col-3">
+        <div class="card col-3 hide-on-search">
           <div class="card-title">
             System Status
             <img
@@ -944,12 +1045,12 @@
           <div class="stat-trend">Defenses Nominal</div>
         </div>
 
-        <div class="card col-12">
+        <div class="card col-12 hide-on-search" id="map-section-card">
           <h3 class="card-title">Live Tracking Sector</h3>
           <div class="tactical-map" id="sectorMap"></div>
         </div>
 
-        <div class="card col-12">
+        <div class="card col-12" id="records-section">
           <h3 class="card-title">Decrypted Intelligence Records</h3>
           <table>
             <thead>
@@ -957,6 +1058,7 @@
                 <th>Operative</th>
                 <th>Sector</th>
                 <th>Decrypted Intel</th>
+                <th>Files</th>
                 <th>Integrity</th>
                 <th>Action</th>
               </tr>
@@ -981,6 +1083,30 @@
                 >
                   [DECRYPTING...]
                 </td>
+
+                <td>
+                  {% if report.attachment %}
+                  <a
+                    href="{{ report.attachment }}"
+                    target="_blank"
+                    style="
+                      color: var(--accent-blue);
+                      text-decoration: none;
+                      font-size: 11px;
+                      border: 1px solid var(--accent-blue);
+                      padding: 4px 8px;
+                      border-radius: 4px;
+                      display: inline-block;
+                    "
+                    >VIEW FILE</a
+                  >
+                  {% else %}
+                  <span style="color: var(--text-muted); font-size: 11px"
+                    >None</span
+                  >
+                  {% endif %}
+                </td>
+
                 <td>
                   {% if 'VERIFIED' in report.status %}
                   <span class="status-badge status-verified">VERIFIED</span>
@@ -1020,7 +1146,7 @@
               {% endfor %} {% if not reports %}
               <tr>
                 <td
-                  colspan="5"
+                  colspan="6"
                   style="
                     text-align: center;
                     color: var(--text-muted);
@@ -1086,7 +1212,7 @@
       </div>
 
       <div id="view-uplink" class="dashboard-grid" style="display: none">
-        <div class="card col-12" style="max-width: 600px; margin: 0 auto">
+        <div class="card col-4">
           <h3 class="card-title">Register New Operative</h3>
           <p style="font-size: 12px; color: var(--text-muted); margin-top: 0">
             Passwords automatically hashed via SHA-256 for secure storage.
@@ -1098,14 +1224,125 @@
               required
               placeholder="New Operative ID"
             />
-            <input
-              type="password"
-              name="new_password"
-              required
-              placeholder="Secure Passphrase"
-            />
+            <label style="font-size: 12px; color: var(--text-muted)"
+              >Passphrase</label
+            >
+            <div
+              style="
+                position: relative;
+                display: flex;
+                align-items: center;
+                margin-top: 5px;
+                margin-bottom: 15px;
+              "
+            >
+              <input
+                type="password"
+                id="register-password"
+                name="new_password"
+                required
+                placeholder="Secure Passphrase"
+                style="margin: 0; padding-right: 40px; width: 100%"
+              />
+              <button
+                type="button"
+                onclick="
+                  togglePassword('register-password', 'eye-icon-register')
+                "
+                style="
+                  position: absolute;
+                  right: 10px;
+                  background: transparent;
+                  border: none;
+                  padding: 0;
+                  width: auto;
+                  color: var(--text-muted);
+                  cursor: pointer;
+                  display: flex;
+                "
+                title="Show/Hide Password"
+              >
+                <svg
+                  id="eye-icon-register"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
             <button type="submit">Provision Access</button>
           </form>
+        </div>
+
+        <div class="card col-8">
+          <h3 class="card-title">Active Operatives</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Operative ID</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for agent in agents %}
+              <tr>
+                <td><strong>{{ agent.username }}</strong></td>
+                <td>
+                  <span class="status-badge status-verified">ACTIVE</span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 5px">
+                    <button
+                      class="btn-edit"
+                      onclick="openEditAgentModal('{{ agent.id }}', '{{ agent.username }}')"
+                    >
+                      EDIT
+                    </button>
+                    <form
+                      action="/delete_agent/{{ agent.id }}"
+                      method="POST"
+                      style="margin: 0"
+                    >
+                      <button
+                        type="submit"
+                        class="btn-delete"
+                        onclick="
+                          return confirm(
+                            'CRITICAL WARNING: Permanently revoke access for this operative?',
+                          );
+                        "
+                      >
+                        REVOKE
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %} {% if not agents %}
+              <tr>
+                <td
+                  colspan="3"
+                  style="
+                    text-align: center;
+                    color: var(--text-muted);
+                    padding: 20px;
+                  "
+                >
+                  No active operatives in system.
+                </td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -1151,6 +1388,46 @@
       </div>
 
       <div id="view-settings" class="dashboard-grid" style="display: none">
+        <div class="card col-12">
+          <h3 class="card-title">Administrator Settings</h3>
+
+          <h4
+            style="
+              color: var(--text-main);
+              margin-top: 20px;
+              margin-bottom: 5px;
+            "
+          >
+            Secure Email Link
+          </h4>
+          <p style="font-size: 12px; color: var(--text-muted); margin-top: 0">
+            Receive 2FA tokens and administrative alerts directly to your inbox.
+          </p>
+
+          <form action="/update_email" method="POST" style="max-width: 400px">
+            <input
+              type="email"
+              name="email"
+              placeholder="admin@secure-link.net"
+              required
+              value="{{ current_email if current_email else '' }}"
+            />
+            <button type="submit">Link Email Address</button>
+          </form>
+
+          <div style="margin-top: 15px; font-size: 13px">
+            Connection Status: {% if current_email %}
+            <span style="color: var(--accent-green); font-weight: bold"
+              >[ VERIFIED: {{ current_email }} ]</span
+            >
+            {% else %}
+            <span style="color: var(--accent-red); font-weight: bold"
+              >[ UNLINKED: 2FA DISABLED ]</span
+            >
+            {% endif %}
+          </div>
+        </div>
+
         <div
           class="card col-12"
           style="
@@ -1160,6 +1437,7 @@
             justify-content: center;
             text-align: center;
             padding: 40px;
+            margin-top: 20px;
           "
         >
           <h3 style="color: var(--accent-red); margin-top: 0; font-size: 24px">
@@ -1234,6 +1512,99 @@
           <div style="display: flex; gap: 10px; margin-top: 15px">
             <button type="submit">Update & Re-Encrypt</button>
             <button type="button" class="btn-danger" onclick="closeEditModal()">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="editAgentModal" class="modal">
+      <div class="modal-content">
+        <h3
+          style="
+            margin-top: 0;
+            color: var(--accent-blue);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+          "
+        >
+          Update Operative Profile
+        </h3>
+        <form action="/edit_agent" method="POST">
+          <input type="hidden" id="edit-agent-id" name="agent_id" />
+
+          <label style="font-size: 12px; color: var(--text-muted)"
+            >Operative ID</label
+          >
+          <input
+            type="text"
+            id="edit-agent-username"
+            name="username"
+            required
+          />
+
+          <label style="font-size: 12px; color: var(--text-muted)"
+            >New Passphrase (Leave blank to keep current)</label
+          >
+          <div
+            style="
+              position: relative;
+              display: flex;
+              align-items: center;
+              margin-top: 5px;
+              margin-bottom: 15px;
+            "
+          >
+            <input
+              type="password"
+              id="edit-agent-password"
+              name="password"
+              placeholder="Leave blank to keep current password"
+              style="margin: 0; padding-right: 40px; width: 100%"
+            />
+            <button
+              type="button"
+              onclick="
+                togglePassword('edit-agent-password', 'eye-icon-edit-agent')
+              "
+              style="
+                position: absolute;
+                right: 10px;
+                background: transparent;
+                border: none;
+                padding: 0;
+                width: auto;
+                color: var(--text-muted);
+                cursor: pointer;
+                display: flex;
+              "
+              title="Show/Hide Password"
+            >
+              <svg
+                id="eye-icon-edit-agent"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 15px">
+            <button type="submit">Update Operative</button>
+            <button
+              type="button"
+              class="btn-danger"
+              onclick="closeEditAgentModal()"
+            >
               Cancel
             </button>
           </div>
@@ -1343,14 +1714,34 @@
         }
       }
 
-      // 4. Search Filter
+      // 4. Search Filter & Dynamic Display
       const searchBar = document.querySelector(".search-bar");
+
       if (searchBar) {
         searchBar.addEventListener("input", function (e) {
           const searchTerm = e.target.value.toLowerCase();
-          const tableRows = document.querySelectorAll("tbody tr");
+
+          // Grab all elements tagged to hide during a search (Stat Cards & Map)
+          const elementsToHide = document.querySelectorAll(".hide-on-search");
+
+          if (searchTerm.length > 0) {
+            // Force the view back to the dashboard tab
+            switchTab("dashboard");
+
+            // Hide the extra UI to instantly push the table to the top
+            elementsToHide.forEach((el) => {
+              el.style.display = "none";
+            });
+          } else {
+            // Restore the normal dashboard layout when search is cleared
+            elementsToHide.forEach((el) => {
+              el.style.display = "";
+            });
+          }
+
+          // Live filter logic
+          const tableRows = document.querySelectorAll(".report-row");
           tableRows.forEach((row) => {
-            if (row.innerText.includes("No records found")) return;
             const rowText = row.innerText.toLowerCase();
             row.style.display = rowText.includes(searchTerm) ? "" : "none";
           });
@@ -1422,7 +1813,7 @@
         if (query.includes("help"))
           return "AVAILABLE COMMANDS: 'status', 'encryption', 'threats', 'clearance'.";
         if (query.includes("status"))
-          return "SYSTEM STATUS: UPLINK SECURE. SQLite Database active.";
+          return "SYSTEM STATUS: UPLINK SECURE. Supabase Cloud DB active.";
         if (query.includes("encryption"))
           return "SECURITY PROTOCOL: All data secured using Python Cryptography (Fernet Symmetric AES-256).";
         if (query.includes("threat") || query.includes("tamper"))
@@ -1586,7 +1977,7 @@
         }
       });
 
-      // 9. Edit Modal Logic
+      // 9. Edit Modal Logic (For Reports)
       function openEditModal(id, sector, threat, intel) {
         document.getElementById("edit-id").value = id;
         document.getElementById("edit-sector").value = sector;
@@ -1597,6 +1988,38 @@
 
       function closeEditModal() {
         document.getElementById("editModal").style.display = "none";
+      }
+
+      // NEW: Edit Modal Logic (For Agents)
+      function openEditAgentModal(id, username) {
+        document.getElementById("edit-agent-id").value = id;
+        document.getElementById("edit-agent-username").value = username;
+        document.getElementById("edit-agent-password").value = ""; // Clear out password
+        document.getElementById("editAgentModal").style.display = "flex";
+      }
+
+      function closeEditAgentModal() {
+        document.getElementById("editAgentModal").style.display = "none";
+      }
+
+      // 10. Toggle Password Visibility
+      function togglePassword(inputId, iconId) {
+        const pwdInput = document.getElementById(inputId);
+        const eyeIcon = document.getElementById(iconId);
+
+        if (pwdInput.type === "password") {
+          pwdInput.type = "text";
+          // Change SVG to "Eye Off" (slashed eye)
+          eyeIcon.innerHTML =
+            '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+          eyeIcon.style.color = "var(--accent-blue)";
+        } else {
+          pwdInput.type = "password";
+          // Change SVG back to normal "Eye"
+          eyeIcon.innerHTML =
+            '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+          eyeIcon.style.color = "var(--text-muted)";
+        }
       }
     </script>
   </body>
