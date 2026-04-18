@@ -9,6 +9,11 @@ from cryptography.fernet import Fernet
 from supabase import create_client, Client
 import smtplib
 from email.mime.text import MIMEText
+from dotenv import load_dotenv
+
+
+# Load the hidden variables from the .env file
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "osiris_super_secret_session_key"
