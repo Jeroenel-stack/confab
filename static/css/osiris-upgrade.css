@@ -1,0 +1,121 @@
+:root {
+    --panel: rgba(10, 18, 32, 0.88);
+    --panel-soft: rgba(18, 28, 46, 0.86);
+    --border: rgba(0, 255, 209, 0.24);
+    --text: #e8fbff;
+    --muted: #8fb8c4;
+    --accent: #00ffd1;
+    --danger: #ff4d6d;
+    --warning: #ffcc66;
+    --success: #4dff88;
+}
+
+.osiris-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 18px 0;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--panel-soft);
+    box-shadow: 0 0 28px rgba(0, 255, 209, 0.08);
+}
+
+.osiris-input {
+    min-height: 42px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(4, 10, 20, 0.78);
+    color: var(--text);
+    outline: none;
+}
+
+.osiris-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 255, 209, 0.12);
+}
+
+.osiris-input.small {
+    min-height: 34px;
+    padding: 6px 10px;
+}
+
+.osiris-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    background: rgba(0, 255, 209, 0.12);
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.osiris-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(0, 255, 209, 0.2);
+    box-shadow: 0 0 18px rgba(0, 255, 209, 0.22);
+}
+
+.osiris-btn.small {
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+.report-row {
+    transition: 0.2s ease;
+}
+
+.report-row:hover {
+    background: rgba(0, 255, 209, 0.06);
+}
+
+.status-pill {
+    display: inline-flex;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.status-open {
+    color: var(--warning);
+    background: rgba(255, 204, 102, 0.12);
+}
+
+.status-reviewing {
+    color: var(--accent);
+    background: rgba(0, 255, 209, 0.12);
+}
+
+.status-resolved {
+    color: var(--success);
+    background: rgba(77, 255, 136, 0.12);
+}
+
+.status-archived {
+    color: var(--muted);
+    background: rgba(143, 184, 196, 0.12);
+}
+
+@media (max-width: 768px) {
+    .osiris-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .osiris-input,
+    .osiris-btn {
+        width: 100%;
+    }
+}

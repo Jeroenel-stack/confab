@@ -39,16 +39,12 @@ if GEMINI_API_KEY:
 # 3. FILE UPLOAD CONFIGURATION
 # ==========================================
 UPLOAD_FOLDER = "static/uploads"
-PROFILE_UPLOAD_FOLDER = "static/uploads/profiles"
-ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "pdf", "doc", "docx", "txt", "csv"}
-PROFILE_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "pdf", "doc", "docx", "txt", "csv"}
 MAX_UPLOAD_MB = 10
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["PROFILE_UPLOAD_FOLDER"] = PROFILE_UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = MAX_UPLOAD_MB * 1024 * 1024
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(PROFILE_UPLOAD_FOLDER, exist_ok=True)
 
 # ==========================================
 # 4. SUPABASE CLOUD CONNECTION
@@ -82,8 +78,6 @@ SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
 REPORT_STATUSES = ["OPEN", "REVIEWING", "RESOLVED", "ARCHIVED"]
 PRIORITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-ACCESS_REQUEST_STATUSES = ["PENDING", "APPROVED", "REJECTED"]
-AI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash"]
 
 # ==========================================
 # 7. HELPER FUNCTIONS
@@ -116,172 +110,6 @@ def require_login(role=None):
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def allowed_profile_photo(filename):
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in PROFILE_IMAGE_EXTENSIONS
-
-
-def get_user_profile(username):
-    """Fetches a user profile, with a fallback for older databases."""
-    try:
-        response = (
-            supabase.table("users")
-            .select("id, username, role, email, full_name, phone, profile_photo, updated_at")
-            .eq("username", username)
-            .limit(1)
-            .execute()
-        )
-    except Exception:
-        response = (
-            supabase.table("users")
-            .select("id, username, role, email")
-            .eq("username", username)
-            .limit(1)
-            .execute()
-        )
-
-    if response.data:
-        return response.data[0]
-
-    return {"username": username, "role": session.get("role"), "email": None}
-
-
-
-
-def get_user_report_history(username):
-    """Returns decrypted report history for the currently signed-in operative."""
-    try:
-        response = (
-            supabase.table("reports")
-            .select("*")
-            .eq("agent", username)
-            .order("timestamp", desc=True)
-            .limit(50)
-            .execute()
-        )
-        return [decrypt_report(report) for report in (response.data or [])]
-    except Exception as exc:
-        print(f"USER REPORT HISTORY FAILED: {exc}")
-        return []
-
-
-def get_user_audit_logs(username, limit=50):
-    """Returns audit logs that mention the signed-in user only.
-
-    Agents should not see the full system audit trail. This keeps their history
-    limited to entries connected to their own account actions.
-    """
-    try:
-        response = (
-            supabase.table("audit_logs")
-            .select("*")
-            .order("timestamp", desc=True)
-            .limit(250)
-            .execute()
-        )
-        username_lower = username.lower()
-        matched_logs = []
-
-        for log in response.data or []:
-            action = log.get("action") or ""
-            if username_lower in action.lower():
-                matched_logs.append((log.get("timestamp"), action))
-
-            if len(matched_logs) >= limit:
-                break
-
-        return matched_logs
-    except Exception as exc:
-        print(f"USER AUDIT HISTORY FAILED: {exc}")
-        return []
-
-def get_access_requests(limit=50):
-    """Fetches latest access requests for admin review."""
-    try:
-        response = (
-            supabase.table("access_requests")
-            .select("*")
-            .order("created_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
-        return response.data or []
-    except Exception as exc:
-        print(f"ACCESS REQUEST FETCH FAILED: {exc}")
-        return []
-
-
-def send_access_request_email(recipient_email, subject, body):
-    """Sends access request status emails when SMTP is configured."""
-    if not recipient_email or not SENDER_EMAIL or not SENDER_PASSWORD:
-        return False
-
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = SENDER_EMAIL
-    msg["To"] = recipient_email
-
-    try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
-        return True
-    except Exception as exc:
-        print(f"ACCESS REQUEST EMAIL FAILED: {exc}")
-        return False
-
-
-def generate_temporary_password(length=12):
-    """Creates a temporary password for approved operative requests."""
-    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%"
-    return "".join(random.choice(alphabet) for _ in range(length))
-
-
-def generate_ai_response_with_retry(prompt, max_retries=3):
-    """Calls Gemini with retry, exponential backoff, and fallback models."""
-    if ai_client is None:
-        return "SYSTEM ERROR: AI Core offline. API Key missing."
-
-    last_error = None
-
-    for model_name in AI_MODELS:
-        for attempt in range(max_retries):
-            try:
-                response = ai_client.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                )
-                return response.text
-
-            except Exception as exc:
-                error_msg = str(exc)
-                last_error = error_msg
-
-                is_retryable = (
-                    "503" in error_msg
-                    or "UNAVAILABLE" in error_msg
-                    or "high demand" in error_msg.lower()
-                    or "overloaded" in error_msg.lower()
-                    or "429" in error_msg
-                    or "quota" in error_msg.lower()
-                )
-
-                if not is_retryable:
-                    raise exc
-
-                wait_time = min((2 ** attempt) + random.uniform(0, 1.5), 10)
-                print(
-                    f"⚠️ AI retry {attempt + 1}/{max_retries} "
-                    f"using {model_name}. Waiting {wait_time:.1f}s..."
-                )
-                time.sleep(wait_time)
-
-    print(f"❌ AI unavailable after retries: {last_error}")
-    return (
-        "⚠️ OSIRIS AI Core is temporarily overloaded due to high demand. "
-        "Please wait a few moments and try again."
-    )
 
 
 def utc_now_iso():
@@ -360,11 +188,13 @@ def home():
         if session["role"] == "admin":
             return redirect("/admin_view")
 
-        user_profile = get_user_profile(session["username"])
-        current_email = user_profile.get("email")
-
-        user_history_reports = get_user_report_history(session["username"])
-        user_audit_logs = get_user_audit_logs(session["username"])
+        user_res = (
+            supabase.table("users")
+            .select("email")
+            .eq("username", session["username"])
+            .execute()
+        )
+        current_email = user_res.data[0].get("email") if user_res.data else None
 
         return render_template(
             "index.html",
@@ -372,11 +202,6 @@ def home():
             username=session["username"],
             role=session["role"],
             current_email=current_email,
-            user_profile=user_profile,
-            user_history_reports=user_history_reports,
-            user_audit_logs=user_audit_logs,
-            report_statuses=REPORT_STATUSES,
-            priorities=PRIORITIES,
         )
 
     return render_template("index.html", logged_in=False)
@@ -504,250 +329,6 @@ def update_email():
     return redirect("/")
 
 
-@app.route("/request_access", methods=["POST"])
-def request_access():
-    """Allows unauthenticated visitors to request an operative account."""
-    full_name = request.form.get("full_name", "").strip()
-    requested_username = request.form.get("username", "").strip()
-    email = request.form.get("email", "").strip().lower()
-    reason = request.form.get("reason", "").strip()
-
-    if not full_name or not requested_username or not email or not reason:
-        flash("Request incomplete. Please provide all required information.")
-        return redirect("/")
-
-    try:
-        existing_user = (
-            supabase.table("users")
-            .select("id")
-            .eq("username", requested_username)
-            .limit(1)
-            .execute()
-        )
-        if existing_user.data:
-            flash("That username is already taken. Please request a different operative ID.")
-            return redirect("/")
-
-        existing_request = (
-            supabase.table("access_requests")
-            .select("id, status")
-            .eq("requested_username", requested_username)
-            .in_("status", ["PENDING"])
-            .limit(1)
-            .execute()
-        )
-        if existing_request.data:
-            flash("A pending request already exists for that username.")
-            return redirect("/")
-
-        supabase.table("access_requests").insert(
-            {
-                "full_name": full_name,
-                "requested_username": requested_username,
-                "email": email,
-                "reason": reason,
-                "status": "PENDING",
-                "created_at": utc_now_iso(),
-            }
-        ).execute()
-
-        log_action(
-            f"ACCESS REQUEST: {full_name} requested operative access as {requested_username}"
-        )
-        flash("Access request submitted. Please wait for administrator approval.")
-
-    except Exception as exc:
-        print(f"ACCESS REQUEST FAILED: {exc}")
-        flash(
-            "Error: Could not submit access request. Make sure the access_requests table and RLS insert policy are configured."
-        )
-
-    return redirect("/")
-
-
-@app.route("/approve_access_request/<int:request_id>", methods=["POST"])
-@require_login("admin")
-def approve_access_request(request_id):
-    """Approves a pending request, creates an agent account, and emails a temporary password."""
-    try:
-        request_response = (
-            supabase.table("access_requests")
-            .select("*")
-            .eq("id", request_id)
-            .limit(1)
-            .execute()
-        )
-        if not request_response.data:
-            flash("Access request not found.")
-            return redirect("/admin_view")
-
-        access_request = request_response.data[0]
-        if access_request.get("status") != "PENDING":
-            flash("This access request has already been reviewed.")
-            return redirect("/admin_view")
-
-        username = access_request.get("requested_username", "").strip()
-        email = access_request.get("email")
-        full_name = access_request.get("full_name")
-
-        existing_user = (
-            supabase.table("users")
-            .select("id")
-            .eq("username", username)
-            .limit(1)
-            .execute()
-        )
-        if existing_user.data:
-            flash("Cannot approve: requested username already exists.")
-            return redirect("/admin_view")
-
-        temporary_password = generate_temporary_password()
-        hashed_password = hashlib.sha256(temporary_password.encode()).hexdigest()
-
-        user_insert = {
-            "username": username,
-            "password_hash": hashed_password,
-            "role": "agent",
-            "email": email,
-            "full_name": full_name,
-        }
-
-        try:
-            supabase.table("users").insert(user_insert).execute()
-        except Exception:
-            # Fallback for users tables that have not yet run the profile migration.
-            user_insert.pop("full_name", None)
-            supabase.table("users").insert(user_insert).execute()
-
-        supabase.table("access_requests").update(
-            {
-                "status": "APPROVED",
-                "reviewed_by": session["username"],
-                "reviewed_at": utc_now_iso(),
-            }
-        ).eq("id", request_id).execute()
-
-        send_access_request_email(
-            email,
-            "OSIRIS Access Approved",
-            "Your OSIRIS operative access has been approved.\n\n"
-            f"Username: {username}\n"
-            f"Temporary Password: {temporary_password}\n\n"
-            "Please log in and update your password from your Profile page.",
-        )
-
-        log_action(f"Admin {session['username']} approved access request for {username}")
-        flash(f"Access approved for {username}. Temporary password generated and emailed if SMTP is configured.")
-
-    except Exception as exc:
-        print(f"APPROVE ACCESS REQUEST FAILED: {exc}")
-        flash("Could not approve access request. Check Supabase table columns and policies.")
-
-    return redirect("/admin_view")
-
-
-@app.route("/reject_access_request/<int:request_id>", methods=["POST"])
-@require_login("admin")
-def reject_access_request(request_id):
-    """Rejects a pending operative access request."""
-    try:
-        request_response = (
-            supabase.table("access_requests")
-            .select("*")
-            .eq("id", request_id)
-            .limit(1)
-            .execute()
-        )
-        if not request_response.data:
-            flash("Access request not found.")
-            return redirect("/admin_view")
-
-        access_request = request_response.data[0]
-        supabase.table("access_requests").update(
-            {
-                "status": "REJECTED",
-                "reviewed_by": session["username"],
-                "reviewed_at": utc_now_iso(),
-            }
-        ).eq("id", request_id).execute()
-
-        send_access_request_email(
-            access_request.get("email"),
-            "OSIRIS Access Request Update",
-            "Your OSIRIS operative access request was reviewed but not approved at this time.",
-        )
-
-        log_action(
-            f"Admin {session['username']} rejected access request for {access_request.get('requested_username')}"
-        )
-        flash("Access request rejected.")
-
-    except Exception as exc:
-        print(f"REJECT ACCESS REQUEST FAILED: {exc}")
-        flash("Could not reject access request. Check Supabase table columns and policies.")
-
-    return redirect("/admin_view")
-
-
-@app.route("/update_profile", methods=["POST"])
-@require_login()
-def update_profile():
-    """Allows both admins and agents to update their own profile and upload a photo."""
-    current_username = session["username"]
-    new_username = request.form.get("username", current_username).strip()
-    full_name = request.form.get("full_name", "").strip()
-    email = request.form.get("email", "").strip()
-    phone = request.form.get("phone", "").strip()
-    new_password = request.form.get("new_password", "")
-    confirm_password = request.form.get("confirm_password", "")
-
-    redirect_target = "/admin_view" if session.get("role") == "admin" else "/"
-
-    if not new_username:
-        flash("Profile update failed: username is required.")
-        return redirect(redirect_target)
-
-    update_data = {
-        "username": new_username,
-        "full_name": full_name or None,
-        "email": email or None,
-        "phone": phone or None,
-        "updated_at": utc_now_iso(),
-    }
-
-    if new_password or confirm_password:
-        if new_password != confirm_password:
-            flash("Profile update failed: password confirmation does not match.")
-            return redirect(redirect_target)
-        if len(new_password) < 8:
-            flash("Profile update failed: new password must be at least 8 characters.")
-            return redirect(redirect_target)
-        update_data["password_hash"] = hashlib.sha256(new_password.encode()).hexdigest()
-
-    photo = request.files.get("profile_photo")
-    if photo and photo.filename:
-        if not allowed_profile_photo(photo.filename):
-            flash("Profile photo blocked: upload JPG, PNG, GIF, or WEBP only.")
-            return redirect(redirect_target)
-
-        filename = secure_filename(photo.filename)
-        unique_filename = f"{int(time.time())}_{current_username}_{filename}"
-        filepath = os.path.join(app.config["PROFILE_UPLOAD_FOLDER"], unique_filename)
-        photo.save(filepath)
-        update_data["profile_photo"] = f"/static/uploads/profiles/{unique_filename}"
-
-    try:
-        supabase.table("users").update(update_data).eq("username", current_username).execute()
-        session["username"] = new_username
-        log_action(f"User {current_username} updated profile information.")
-        flash("Profile updated successfully.")
-    except Exception as exc:
-        print(exc)
-        flash("Profile update failed. Run the users profile migration first or check if the username is already taken.")
-
-    return redirect(redirect_target)
-
-
 @app.route("/submit_report", methods=["POST"])
 @require_login("agent")
 def submit_report():
@@ -829,11 +410,13 @@ def admin_view():
     )
     agents = agents_response.data or []
 
-    user_profile = get_user_profile(session["username"])
-    current_email = user_profile.get("email")
-    user_history_reports = get_user_report_history(session["username"])
-    user_audit_logs = get_user_audit_logs(session["username"])
-    access_requests = get_access_requests()
+    user_res = (
+        supabase.table("users")
+        .select("email")
+        .eq("username", session["username"])
+        .execute()
+    )
+    current_email = user_res.data[0].get("email") if user_res.data else None
 
     return render_template(
         "index.html",
@@ -844,10 +427,6 @@ def admin_view():
         audit_logs=audit_logs,
         agents=agents,
         current_email=current_email,
-        user_profile=user_profile,
-        user_history_reports=user_history_reports,
-        user_audit_logs=user_audit_logs,
-        access_requests=access_requests,
         report_statuses=REPORT_STATUSES,
         priorities=PRIORITIES,
     )
@@ -859,8 +438,6 @@ def create_agent():
     new_user = request.form["new_username"].strip()
     new_pass = request.form["new_password"]
     new_email = request.form.get("new_email", "").strip() or None
-    new_full_name = request.form.get("new_full_name", "").strip() or None
-    new_phone = request.form.get("new_phone", "").strip() or None
     hashed_pass = hashlib.sha256(new_pass.encode()).hexdigest()
 
     try:
@@ -870,8 +447,6 @@ def create_agent():
                 "password_hash": hashed_pass,
                 "role": "agent",
                 "email": new_email,
-                "full_name": new_full_name,
-                "phone": new_phone,
             }
         ).execute()
         log_action(f"Admin provisioned new operative access: {new_user}")
@@ -890,16 +465,8 @@ def edit_agent():
     new_username = request.form["username"].strip()
     new_password = request.form.get("password", "")
     new_email = request.form.get("email", "").strip()
-    new_full_name = request.form.get("full_name", "").strip()
-    new_phone = request.form.get("phone", "").strip()
 
-    update_data = {
-        "username": new_username,
-        "email": new_email or None,
-        "full_name": new_full_name or None,
-        "phone": new_phone or None,
-        "updated_at": utc_now_iso(),
-    }
+    update_data = {"username": new_username, "email": new_email or None}
     if new_password.strip():
         update_data["password_hash"] = hashlib.sha256(new_password.encode()).hexdigest()
 
@@ -1036,7 +603,7 @@ def dashboard_metrics():
         "archived_reports": len([r for r in reports if r.get("status") == "ARCHIVED"]),
         "critical_reports": len([
             r for r in reports
-            if r.get("priority") == "CRITICAL" or r.get("threat_level") == "CRITICAL"
+            if r.get("priority") == "CRITICAL" or r.get("threat_level") == "Immediate Support"
         ]),
         "sector_counts": {},
         "priority_counts": {},
@@ -1105,8 +672,6 @@ def export_reports():
     return response
 
 
-
-
 @app.route("/api/chat", methods=["POST"])
 @require_login()
 def api_chat():
@@ -1123,29 +688,23 @@ def api_chat():
         tactical_prompt = (
             "You are OSIRIS, a highly advanced tactical AI assistant for a cybersecurity "
             "command center. Respond concisely, professionally, and with a slightly "
-            "militaristic/cyber tone.\n\n"
-            f"User query: {user_message}"
+            f"militaristic/cyber tone to the following query. Query: {user_message}"
         )
 
-        reply = generate_ai_response_with_retry(tactical_prompt)
-        status_code = 503 if "temporarily overloaded" in reply else 200
-        return jsonify({"reply": reply}), status_code
+        response = ai_client.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=tactical_prompt,
+        )
+        return jsonify({"reply": response.text})
 
     except Exception as exc:
         error_msg = str(exc)
         print(f"❌ CRITICAL AI ERROR: {error_msg}")
 
-        if "503" in error_msg or "UNAVAILABLE" in error_msg or "high demand" in error_msg.lower():
-            return jsonify(
-                {
-                    "reply": "⚠️ AI Core is temporarily overloaded. Please retry in a few moments."
-                }
-            ), 503
-
         if "429" in error_msg or "quota" in error_msg.lower():
             return jsonify(
                 {
-                    "reply": "⚠️ SYSTEM ALERT: Comm-link cooling down to prevent tracking. Please wait before sending another request."
+                    "reply": "⚠️ SYSTEM ALERT: Comm-link cooling down to prevent tracking. Please wait 15 seconds before next transmission."
                 }
             ), 429
 
@@ -1154,5 +713,3 @@ def api_chat():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-

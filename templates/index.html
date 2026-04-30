@@ -16,6 +16,7 @@
       rel="stylesheet"
     />
 
+
     <style>
       :root {
         --bg-color: #0b0d14; /* Slightly darker background */
@@ -35,6 +36,29 @@
       * {
         box-sizing: border-box;
       }
+      .profile-clickable {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 14px;
+  transition: 0.25s ease;
+}
+.btn-secondary {
+  background: transparent;
+  color: var(--accent-blue);
+  border: 1px solid var(--accent-blue);
+  box-shadow: none;
+}
+
+.btn-secondary:hover {
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: var(--glow-blue);
+}
+
+.profile-clickable:hover {
+  background: rgba(59, 130, 246, 0.12);
+  box-shadow: var(--glow-blue);
+  transform: translateY(-1px);
+}
 
       /* CUSTOM SCROLLBARS */
       ::-webkit-scrollbar {
@@ -365,6 +389,52 @@
         box-shadow: var(--glow-red);
       }
 
+      .btn-secondary {
+        background: transparent;
+        color: var(--accent-blue);
+        border: 1px solid var(--accent-blue);
+        box-shadow: none;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(59, 130, 246, 0.12);
+        color: #fff;
+        box-shadow: var(--glow-blue);
+      }
+
+      .auth-actions {
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .auth-divider {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .auth-divider::before,
+      .auth-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border-color);
+      }
+
+      .request-access-note {
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.45;
+        margin: 0;
+        text-align: center;
+      }
+
       /* TABLES */
       table {
         width: 100%;
@@ -638,6 +708,348 @@
         box-shadow: var(--glow-red);
         transform: translateY(-1px);
       }
+
+
+      /* OSIRIS REPORT WORKFLOW TOOLBAR */
+      .osiris-toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 18px 0 20px;
+        padding: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        background: rgba(19, 21, 31, 0.78);
+        box-shadow: 0 0 28px rgba(59, 130, 246, 0.08);
+      }
+
+      .osiris-input {
+        min-height: 40px;
+        padding: 10px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.25);
+        color: var(--text-main);
+        outline: none;
+        font-family: inherit;
+        margin: 0;
+      }
+
+      .osiris-input:focus {
+        border-color: var(--accent-blue);
+        box-shadow: var(--glow-blue);
+      }
+
+      .osiris-input.small {
+        min-height: 32px;
+        padding: 6px 10px;
+        font-size: 13px;
+      }
+
+      .osiris-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        width: auto;
+        padding: 10px 16px;
+        border: 1px solid var(--accent-blue);
+        border-radius: 10px;
+        background: rgba(59, 130, 246, 0.14);
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: none;
+        text-transform: uppercase;
+        margin: 0;
+      }
+
+      .osiris-btn:hover {
+        background: var(--accent-blue);
+        color: #fff;
+        transform: translateY(-1px);
+        box-shadow: var(--glow-blue);
+      }
+
+      .osiris-btn.small {
+        min-height: 32px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+
+      .workflow-form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin: 0;
+      }
+
+      .actions-cell {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .muted-text {
+        color: var(--text-muted);
+        font-size: 11px;
+      }
+
+      /* READABLE INTELLIGENCE RECORDS TABLE */
+      .records-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .records-subtitle {
+        margin: -8px 0 16px;
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .records-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.16);
+      }
+
+      .intel-table {
+        min-width: 1120px;
+        table-layout: fixed;
+      }
+
+      .intel-table th,
+      .intel-table td {
+        vertical-align: top;
+      }
+
+      .intel-table th:nth-child(1),
+      .intel-table td:nth-child(1) { width: 130px; }
+
+      .intel-table th:nth-child(2),
+      .intel-table td:nth-child(2) { width: 180px; }
+
+      .intel-table th:nth-child(3),
+      .intel-table td:nth-child(3) { width: 120px; }
+
+      .intel-table th:nth-child(4),
+      .intel-table td:nth-child(4) { width: 340px; }
+
+      .intel-table th:nth-child(5),
+      .intel-table td:nth-child(5) { width: 100px; }
+
+      .intel-table th:nth-child(6),
+      .intel-table td:nth-child(6) { width: 115px; }
+
+      .intel-table th:nth-child(7),
+      .intel-table td:nth-child(7) { width: 190px; }
+
+      .intel-table th:nth-child(8),
+      .intel-table td:nth-child(8) { width: 120px; }
+
+      .report-row td {
+        line-height: 1.45;
+      }
+
+      .cell-label {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text-muted);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .operative-name,
+      .sector-name {
+        color: var(--text-main);
+        font-weight: 700;
+        word-break: break-word;
+      }
+
+      .intel-readable {
+        max-height: 150px;
+        overflow-y: auto;
+        padding: 12px 13px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.23);
+        color: #f8fbff;
+        white-space: pre-wrap;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+
+      .file-link {
+        color: var(--accent-blue);
+        text-decoration: none;
+        font-size: 11px;
+        border: 1px solid var(--accent-blue);
+        padding: 5px 9px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: max-content;
+      }
+
+      .file-link:hover {
+        background: rgba(59, 130, 246, 0.14);
+        box-shadow: var(--glow-blue);
+      }
+
+      .threat-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .threat-low {
+        color: var(--accent-green);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        background: rgba(16, 185, 129, 0.1);
+      }
+
+      .threat-elevated {
+        color: var(--accent-warning);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.1);
+      }
+
+      .threat-critical {
+        color: var(--accent-red);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.1);
+      }
+
+
+
+      .workflow-badge,
+      .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .workflow-open {
+        color: var(--accent-warning);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.1);
+      }
+
+      .workflow-reviewing {
+        color: var(--accent-blue);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        background: rgba(59, 130, 246, 0.1);
+      }
+
+      .workflow-resolved {
+        color: var(--accent-green);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        background: rgba(16, 185, 129, 0.1);
+      }
+
+      .workflow-archived {
+        color: var(--text-muted);
+        border: 1px solid rgba(139, 155, 180, 0.35);
+        background: rgba(139, 155, 180, 0.1);
+      }
+
+      .priority-low {
+        color: var(--accent-green);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        background: rgba(16, 185, 129, 0.1);
+      }
+
+      .priority-medium {
+        color: var(--accent-blue);
+        border: 1px solid rgba(59, 130, 246, 0.35);
+        background: rgba(59, 130, 246, 0.1);
+      }
+
+      .priority-high {
+        color: var(--accent-warning);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.1);
+      }
+
+      .priority-critical {
+        color: var(--accent-red);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.1);
+      }
+
+      .workflow-form.readable {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .workflow-form.readable .osiris-input.small,
+      .workflow-form.readable .osiris-btn.small {
+        width: 100%;
+      }
+
+      .actions-cell.readable {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .actions-cell.readable .btn-edit,
+      .actions-cell.readable .btn-delete {
+        width: 100%;
+        margin-right: 0;
+      }
+
+      @media (max-width: 900px) {
+        .osiris-toolbar,
+        .workflow-form,
+        .actions-cell {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .osiris-input,
+        .osiris-btn {
+          width: 100%;
+        }
+
+        .records-subtitle {
+          margin-top: 0;
+        }
+
+        .intel-table {
+          min-width: 980px;
+        }
+      }
+
       .modal {
         display: none;
         position: fixed;
@@ -659,6 +1071,263 @@
         border: 1px solid var(--accent-blue);
         box-shadow: 0 0 40px rgba(59, 130, 246, 0.3);
       }
+
+
+      /* PROFILE CENTER */
+      .profile-card {
+        overflow: visible;
+      }
+      .profile-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 28px;
+        align-items: start;
+      }
+      .profile-photo-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 22px;
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.18);
+      }
+      .profile-avatar-large {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--accent-blue);
+        box-shadow: var(--glow-blue);
+        background: rgba(59, 130, 246, 0.08);
+      }
+      .profile-avatar-fallback-large {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 56px;
+        font-weight: 700;
+        color: white;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(16, 185, 129, 0.75));
+      }
+      .profile-avatar-small {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--accent-blue);
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.35);
+      }
+      .profile-avatar-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--accent-blue);
+        color: #fff;
+        font-weight: 700;
+      }
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(220px, 1fr));
+        gap: 16px;
+      }
+      .profile-grid .full-span {
+        grid-column: 1 / -1;
+      }
+      .profile-label {
+        display: block;
+        font-size: 12px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 4px;
+      }
+      .profile-hint {
+        color: var(--text-muted);
+        font-size: 13px;
+        line-height: 1.5;
+        margin: 0;
+      }
+      .profile-form-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-top: 8px;
+      }
+      .profile-form-actions button {
+        width: auto;
+        min-width: 220px;
+      }
+      @media (max-width: 900px) {
+        .profile-layout {
+          grid-template-columns: 1fr;
+        }
+        .profile-grid {
+          grid-template-columns: 1fr;
+        }
+        .profile-form-actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .profile-form-actions button {
+          width: 100%;
+        }
+      }
+
+
+
+
+      /* ADMIN ACCESS REQUESTS PANEL */
+      .access-requests-card {
+        border-left: 4px solid var(--accent-blue);
+      }
+      .access-request-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .request-mini-stat {
+        padding: 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.18);
+      }
+      .request-mini-stat span {
+        display: block;
+        color: var(--text-muted);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 6px;
+      }
+      .request-mini-stat strong {
+        font-family: "Share Tech Mono", monospace;
+        font-size: 22px;
+        color: #fff;
+      }
+      .access-requests-table {
+        min-width: 1080px;
+      }
+      .access-requests-table td {
+        vertical-align: top;
+      }
+      .request-reason {
+        max-width: 360px;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.5;
+        color: var(--text-main);
+      }
+      .request-meta {
+        color: var(--text-muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .request-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .request-actions form {
+        margin: 0;
+      }
+      .request-actions .btn-edit,
+      .request-actions .btn-delete {
+        width: auto;
+        min-width: 86px;
+      }
+      .request-status-pending {
+        color: var(--accent-warning);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.1);
+      }
+      .request-status-approved {
+        color: var(--accent-green);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        background: rgba(16, 185, 129, 0.1);
+      }
+      .request-status-rejected {
+        color: var(--accent-red);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        background: rgba(239, 68, 68, 0.1);
+      }
+      @media (max-width: 900px) {
+        .access-request-summary {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* USER HISTORY / ACTIVITY LOGS */
+      .history-layout {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 25px;
+      }
+
+      .history-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid rgba(59, 130, 246, 0.12);
+        border-radius: 12px;
+      }
+
+      .history-table td {
+        vertical-align: top;
+      }
+
+      .history-intel {
+        max-width: 520px;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.5;
+        color: var(--text-main);
+      }
+
+      .history-terminal {
+        max-height: 420px;
+        overflow-y: auto;
+        font-family: "Share Tech Mono", monospace;
+        font-size: 13px;
+        background: #050608;
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        padding: 18px;
+        box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.75);
+      }
+
+      .history-log-line {
+        display: grid;
+        grid-template-columns: 190px 1fr;
+        gap: 12px;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .history-log-time {
+        color: var(--accent-blue);
+        white-space: nowrap;
+      }
+
+      .history-empty {
+        color: var(--text-muted);
+        text-align: center;
+        padding: 26px;
+      }
+
+      @media (max-width: 900px) {
+        .history-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .history-log-line {
+          grid-template-columns: 1fr;
+        }
+      }
+
     </style>
   </head>
   <body>
@@ -733,6 +1402,22 @@
         </span>
       </div>
 
+      <div class="nav-item" id="nav-history" onclick="switchTab('history')">
+        <img
+          src="{{ url_for('static', filename='forensics.png') }}"
+          style="
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            min-width: 20px;
+          "
+          alt="History Icon"
+          onerror="this.src='{{ url_for('static', filename='settings.png') }}'"
+        />
+        <span class="hide-on-collapse">My History</span>
+      </div>
+
+
       {% if role == 'admin' %}
       <div class="nav-item" id="nav-analytics" onclick="switchTab('analytics')">
         <img
@@ -775,7 +1460,7 @@
           "
           alt="Settings Icon"
         />
-        <span class="hide-on-collapse">Settings</span>
+        <span class="hide-on-collapse">Profile</span>
       </div>
 
       <div style="flex-grow: 1"></div>
@@ -816,28 +1501,27 @@
         <div></div>
         {% endif %}
 
-        <div class="user-profile">
+        <div
+  class="user-profile profile-clickable"
+  onclick="openProfilePage()"
+  title="Open Profile"
+>
           <span style="color: var(--text-muted)"
             >Status:
             <span style="color: var(--accent-green)">Online</span></span
           >
           {% if logged_in %}
-          <div
-            style="
-              width: 35px;
-              height: 35px;
-              background: var(--accent-blue);
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              font-weight: bold;
-            "
-          >
+          {% set profile_photo = user_profile.get('profile_photo') if user_profile is defined and user_profile else None %}
+          {% set display_name = user_profile.get('full_name') if user_profile is defined and user_profile and user_profile.get('full_name') else username %}
+          {% if profile_photo %}
+          <img src="{{ profile_photo }}" alt="Profile Photo" class="profile-avatar-small" />
+          {% else %}
+          <div class="profile-avatar-small profile-avatar-fallback">
             {{ username[0]|upper }}
           </div>
+          {% endif %}
           <div>
-            <div style="font-weight: bold; font-size: 14px">{{ username }}</div>
+            <div style="font-weight: bold; font-size: 14px">{{ display_name }}</div>
             <div
               style="
                 font-size: 12px;
@@ -845,7 +1529,7 @@
                 text-transform: uppercase;
               "
             >
-              {{ role }}
+              {{ role }} • {{ username }}
             </div>
           </div>
           {% endif %}
@@ -1014,6 +1698,20 @@
 
             <button type="submit">Establish Secure Connection</button>
           </form>
+
+          <div class="auth-actions">
+            <div class="auth-divider">New Operative</div>
+            <button
+              type="button"
+              class="btn-secondary"
+              onclick="openRegisterModal()"
+            >
+              Request Operative Access
+            </button>
+            <p class="request-access-note">
+              Access requests are reviewed by an administrator before an account is created.
+            </p>
+          </div>
         </div>
       </div>
       {% endif %} {% endif %} {% if logged_in and role == 'agent' %}
@@ -1150,43 +1848,66 @@
       </div>
 
       <div id="view-settings" class="dashboard-grid" style="display: none">
-        <div class="card col-12">
-          <h3 class="card-title">Operative Settings</h3>
-          <p style="color: var(--text-muted); margin-bottom: 30px">
-            Manage your local command preferences and secure communication
-            links.
+        <div class="card col-12 profile-card">
+          <h3 class="card-title">Profile Center</h3>
+          <p class="profile-hint" style="margin-bottom: 24px">
+            Update your operative profile, secure email, contact details, password, and profile photo.
           </p>
 
-          <h4 style="color: var(--text-main); margin-bottom: 5px">
-            Secure Email Link
-          </h4>
-          <p style="font-size: 12px; color: var(--text-muted); margin-top: 0">
-            Receive 2FA tokens directly to your encrypted inbox. Without this,
-            remote login will fail.
-          </p>
+          {% set profile_photo = user_profile.get('profile_photo') if user_profile is defined and user_profile else None %}
+          <form action="/update_profile" method="POST" enctype="multipart/form-data">
+            <div class="profile-layout">
+              <div class="profile-photo-panel">
+                {% if profile_photo %}
+                <img id="profile-photo-preview" src="{{ profile_photo }}" alt="Profile Photo" class="profile-avatar-large" />
+                {% else %}
+                <div id="profile-photo-preview" class="profile-avatar-large profile-avatar-fallback-large">
+                  {{ username[0]|upper }}
+                </div>
+                {% endif %}
+                <p class="profile-hint" style="text-align: center">
+                  Upload JPG, PNG, GIF, or WEBP. Maximum upload size follows your Flask limit.
+                </p>
+                <input type="file" name="profile_photo" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewProfilePhoto(this)" />
+              </div>
 
-          <form action="/update_email" method="POST" style="max-width: 400px">
-            <input
-              type="email"
-              name="email"
-              placeholder="operative@secure-link.net"
-              required
-              value="{{ current_email if current_email else '' }}"
-            />
-            <button type="submit">Link Email Address</button>
+              <div>
+                <div class="profile-grid">
+                  <div>
+                    <label class="profile-label">Username</label>
+                    <input type="text" name="username" required value="{{ username }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Full Name</label>
+                    <input type="text" name="full_name" placeholder="Your full name" value="{{ user_profile.get('full_name', '') if user_profile is defined and user_profile else '' }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Secure Email</label>
+                    <input type="email" name="email" placeholder="operative@secure-link.net" value="{{ current_email if current_email else '' }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Phone / Contact</label>
+                    <input type="text" name="phone" placeholder="Contact number" value="{{ user_profile.get('phone', '') if user_profile is defined and user_profile else '' }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">New Password</label>
+                    <input type="password" name="new_password" placeholder="Leave blank to keep current" autocomplete="new-password" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Confirm Password</label>
+                    <input type="password" name="confirm_password" placeholder="Confirm new password" autocomplete="new-password" />
+                  </div>
+                </div>
+
+                <div class="profile-form-actions">
+                  <button type="submit">Save Profile Changes</button>
+                  <span class="profile-hint">
+                    Your login username updates immediately after saving.
+                  </span>
+                </div>
+              </div>
+            </div>
           </form>
-
-          <div style="margin-top: 15px; font-size: 13px">
-            Connection Status: {% if current_email %}
-            <span style="color: var(--accent-green); font-weight: bold"
-              >[ VERIFIED: {{ current_email }} ]</span
-            >
-            {% else %}
-            <span style="color: var(--accent-red); font-weight: bold"
-              >[ UNLINKED: 2FA DISABLED ]</span
-            >
-            {% endif %}
-          </div>
         </div>
       </div>
       {% endif %} {% if logged_in and role == 'admin' %}
@@ -1252,114 +1973,141 @@
         </div>
 
         <div class="card col-12" id="records-section">
-          <h3 class="card-title">Decrypted Intelligence Records</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Operative</th>
-                <th>Sector</th>
-                <th>Decrypted Intel</th>
-                <th>Files</th>
-                <th>Integrity</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for report in reports %}
-              <tr
-                class="report-row"
-                data-sector="{{ report.sector }}"
-                data-threat="{{ report.threat }}"
-              >
-                <td><strong>{{ report.agent }}</strong></td>
-                <td>
-                  {{ report.sector }}<br /><span
-                    style="font-size: 11px; color: var(--text-muted)"
-                    >{{ report.threat }}</span
-                  >
-                </td>
-                <td
-                  class="decryption-effect"
-                  data-target="{{ report.decrypted_text }}"
+          <div class="records-header-row">
+            <h3 class="card-title" style="margin-bottom: 0">Decrypted Intelligence Records</h3>
+          </div>
+          <p class="records-subtitle">
+            Review decrypted field reports, check integrity status, update workflow status, and export records for offline review.
+          </p>
+
+          <div class="osiris-toolbar">
+            <input
+              type="text"
+              id="reportSearch"
+              placeholder="Search operative, sector, or intelligence..."
+              class="osiris-input"
+            />
+
+            <select id="statusFilter" class="osiris-input">
+              <option value="">All Status</option>
+              <option value="OPEN">Open</option>
+              <option value="REVIEWING">Reviewing</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="ARCHIVED">Archived</option>
+            </select>
+
+            <a href="/export_reports" class="osiris-btn">Export CSV</a>
+          </div>
+
+          <div class="records-table-wrapper">
+            <table class="intel-table">
+              <thead>
+                <tr>
+                  <th>Operative</th>
+                  <th>Sector</th>
+                  <th>Threat</th>
+                  <th>Readable Intelligence</th>
+                  <th>File</th>
+                  <th>Integrity</th>
+                  <th>Workflow</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for report in reports %}
+                <tr
+                  class="report-row"
+                  data-sector="{{ report.sector }}"
+                  data-threat="{{ report.threat_level }}"
+                  data-status="{{ report.status or 'OPEN' }}"
+                  data-search="{{ report.agent }} {{ report.sector }} {{ report.threat_level }} {{ report.decrypted_text }}"
                 >
-                  [DECRYPTING...]
-                </td>
-
-                <td>
-                  {% if report.attachment %}
-                  <a
-                    href="{{ report.attachment }}"
-                    target="_blank"
-                    style="
-                      color: var(--accent-blue);
-                      text-decoration: none;
-                      font-size: 11px;
-                      border: 1px solid var(--accent-blue);
-                      padding: 4px 8px;
-                      border-radius: 4px;
-                      display: inline-block;
-                    "
-                    >VIEW FILE</a
-                  >
-                  {% else %}
-                  <span style="color: var(--text-muted); font-size: 11px"
-                    >None</span
-                  >
-                  {% endif %}
-                </td>
-
-                <td>
-                  {% if 'VERIFIED' in report.status %}
-                  <span class="status-badge status-verified">VERIFIED</span>
-                  {% else %}
-                  <span class="status-badge status-tampered">TAMPERED</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <div style="display: flex; gap: 5px">
-                    <button
-                      class="btn-edit"
-                      onclick="openEditModal('{{ report.id }}', '{{ report.sector }}', '{{ report.threat }}', '{{ report.decrypted_text | escape }}')"
-                    >
-                      EDIT
-                    </button>
-
+                  <td>
+                    <span class="cell-label">Agent</span>
+                    <span class="operative-name">{{ report.agent }}</span>
+                  </td>
+                  <td>
+                    <span class="cell-label">Location / Sector</span>
+                    <span class="sector-name">{{ report.sector }}</span>
+                  </td>
+                  <td>
+                    <span class="cell-label">Threat Level</span>
+                    {% if report.threat_level == 'CRITICAL' %}
+                      <span class="threat-badge threat-critical">{{ report.threat_level }}</span>
+                    {% elif report.threat_level == 'ELEVATED' %}
+                      <span class="threat-badge threat-elevated">{{ report.threat_level }}</span>
+                    {% else %}
+                      <span class="threat-badge threat-low">{{ report.threat_level }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="cell-label">Decrypted Payload</span>
+                    <div
+                      class="intel-readable decryption-effect"
+                      data-target="{{ report.decrypted_text | e }}"
+                    >[DECRYPTING...]</div>
+                  </td>
+                  <td>
+                    <span class="cell-label">Attachment</span>
+                    {% if report.attachment %}
+                      <a href="{{ report.attachment }}" target="_blank" class="file-link">VIEW FILE</a>
+                    {% else %}
+                      <span class="muted-text">None</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="cell-label">Integrity</span>
+                    {% if report.status_flag == 'VERIFIED' %}
+                      <span class="status-badge status-verified">{{ report.status_flag }}</span>
+                    {% else %}
+                      <span class="status-badge status-tampered">{{ report.status_flag }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="cell-label">Report Status</span>
                     <form
-                      action="/delete_report/{{ report.id }}"
                       method="POST"
-                      style="margin: 0"
+                      action="/update_report_status/{{ report.id }}"
+                      class="workflow-form readable"
                     >
-                      <button
-                        type="submit"
-                        class="btn-delete"
-                        onclick="
-                          return confirm(
-                            'CRITICAL: Permanently delete this intelligence record?',
-                          );
-                        "
-                      >
-                        DELETE
-                      </button>
+                      <select name="status" class="osiris-input small">
+                        <option value="OPEN" {% if report.status == 'OPEN' %}selected{% endif %}>Open</option>
+                        <option value="REVIEWING" {% if report.status == 'REVIEWING' %}selected{% endif %}>Reviewing</option>
+                        <option value="RESOLVED" {% if report.status == 'RESOLVED' %}selected{% endif %}>Resolved</option>
+                        <option value="ARCHIVED" {% if report.status == 'ARCHIVED' %}selected{% endif %}>Archived</option>
+                      </select>
+                      <button type="submit" class="osiris-btn small">Update</button>
                     </form>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %} {% if not reports %}
-              <tr>
-                <td
-                  colspan="6"
-                  style="
-                    text-align: center;
-                    color: var(--text-muted);
-                    padding: 30px;
-                  "
-                >
-                  No records found.
-                </td>
-              </tr>
-              {% endif %}
-            </tbody>
-          </table>
+                  </td>
+                  <td>
+                    <span class="cell-label">Manage</span>
+                    <div class="actions-cell readable">
+                      <button
+                        class="btn-edit"
+                        onclick="openEditModal('{{ report.id }}', '{{ report.sector }}', '{{ report.threat_level }}', '{{ report.decrypted_text | escape }}')"
+                      >EDIT</button>
+
+                      <form action="/delete_report/{{ report.id }}" method="POST" style="margin: 0">
+                        <button
+                          type="submit"
+                          class="btn-delete"
+                          onclick="return confirm('CRITICAL: Permanently delete this intelligence record?');"
+                        >DELETE</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+                {% if not reports %}
+                <tr>
+                  <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                    No records found.
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -1413,6 +2161,118 @@
       </div>
 
       <div id="view-uplink" class="dashboard-grid" style="display: none">
+        <div class="card col-12 access-requests-card">
+          <h3 class="card-title" style="color: var(--accent-blue)">
+            Pending Access Requests
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500">
+              Login Page Submissions
+            </span>
+          </h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: -8px; margin-bottom: 18px; line-height: 1.5">
+            Review new account requests submitted from the login page. Approving a request creates an agent account and sends a temporary password if SMTP email is configured.
+          </p>
+
+          {% set requests = access_requests if access_requests is defined else [] %}
+          {% set pending_count = requests | selectattr('status', 'equalto', 'PENDING') | list | length %}
+          {% set approved_count = requests | selectattr('status', 'equalto', 'APPROVED') | list | length %}
+          {% set rejected_count = requests | selectattr('status', 'equalto', 'REJECTED') | list | length %}
+
+          <div class="access-request-summary">
+            <div class="request-mini-stat">
+              <span>Pending</span>
+              <strong>{{ pending_count }}</strong>
+            </div>
+            <div class="request-mini-stat">
+              <span>Approved</span>
+              <strong>{{ approved_count }}</strong>
+            </div>
+            <div class="request-mini-stat">
+              <span>Rejected</span>
+              <strong>{{ rejected_count }}</strong>
+            </div>
+          </div>
+
+          <div class="records-table-wrapper">
+            <table class="access-requests-table">
+              <thead>
+                <tr>
+                  <th>Applicant</th>
+                  <th>Requested Username</th>
+                  <th>Email</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Requested</th>
+                  <th>Reviewed</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for req in requests %}
+                {% set req_status = req.status or 'PENDING' %}
+                <tr>
+                  <td>
+                    <strong>{{ req.full_name }}</strong>
+                    <div class="request-meta">Request ID: {{ req.id }}</div>
+                  </td>
+                  <td>{{ req.requested_username }}</td>
+                  <td>{{ req.email }}</td>
+                  <td class="request-reason">{{ req.reason }}</td>
+                  <td>
+                    {% if req_status == 'PENDING' %}
+                      <span class="status-badge request-status-pending">PENDING</span>
+                    {% elif req_status == 'APPROVED' %}
+                      <span class="status-badge request-status-approved">APPROVED</span>
+                    {% elif req_status == 'REJECTED' %}
+                      <span class="status-badge request-status-rejected">REJECTED</span>
+                    {% else %}
+                      <span class="status-badge">{{ req_status }}</span>
+                    {% endif %}
+                  </td>
+                  <td class="request-meta">{{ req.created_at }}</td>
+                  <td class="request-meta">
+                    {% if req.reviewed_by %}
+                      {{ req.reviewed_by }}<br />{{ req.reviewed_at }}
+                    {% else %}
+                      Not reviewed
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if req_status == 'PENDING' %}
+                    <div class="request-actions">
+                      <form action="/approve_access_request/{{ req.id }}" method="POST">
+                        <button
+                          type="submit"
+                          class="btn-edit"
+                          onclick="return confirm('Approve this request and create an agent account?');"
+                        >APPROVE</button>
+                      </form>
+                      <form action="/reject_access_request/{{ req.id }}" method="POST">
+                        <button
+                          type="submit"
+                          class="btn-delete"
+                          onclick="return confirm('Reject this access request?');"
+                        >REJECT</button>
+                      </form>
+                    </div>
+                    {% else %}
+                      <span class="request-meta">Completed</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+
+                {% if not requests %}
+                <tr>
+                  <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 28px">
+                    No access requests yet.
+                  </td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="card col-4">
           <h3 class="card-title">Register New Operative</h3>
           <p style="font-size: 12px; color: var(--text-muted); margin-top: 0">
@@ -1589,44 +2449,66 @@
       </div>
 
       <div id="view-settings" class="dashboard-grid" style="display: none">
-        <div class="card col-12">
-          <h3 class="card-title">Administrator Settings</h3>
-
-          <h4
-            style="
-              color: var(--text-main);
-              margin-top: 20px;
-              margin-bottom: 5px;
-            "
-          >
-            Secure Email Link
-          </h4>
-          <p style="font-size: 12px; color: var(--text-muted); margin-top: 0">
-            Receive 2FA tokens and administrative alerts directly to your inbox.
+        <div class="card col-12 profile-card">
+          <h3 class="card-title">Profile Center</h3>
+          <p class="profile-hint" style="margin-bottom: 24px">
+            Update your administrator profile, secure email, contact details, password, and profile photo.
           </p>
 
-          <form action="/update_email" method="POST" style="max-width: 400px">
-            <input
-              type="email"
-              name="email"
-              placeholder="admin@secure-link.net"
-              required
-              value="{{ current_email if current_email else '' }}"
-            />
-            <button type="submit">Link Email Address</button>
-          </form>
+          {% set profile_photo = user_profile.get('profile_photo') if user_profile is defined and user_profile else None %}
+          <form action="/update_profile" method="POST" enctype="multipart/form-data">
+            <div class="profile-layout">
+              <div class="profile-photo-panel">
+                {% if profile_photo %}
+                <img id="profile-photo-preview" src="{{ profile_photo }}" alt="Profile Photo" class="profile-avatar-large" />
+                {% else %}
+                <div id="profile-photo-preview" class="profile-avatar-large profile-avatar-fallback-large">
+                  {{ username[0]|upper }}
+                </div>
+                {% endif %}
+                <p class="profile-hint" style="text-align: center">
+                  Upload JPG, PNG, GIF, or WEBP. Maximum upload size follows your Flask limit.
+                </p>
+                <input type="file" name="profile_photo" accept=".jpg,.jpeg,.png,.gif,.webp" onchange="previewProfilePhoto(this)" />
+              </div>
 
-          <div style="margin-top: 15px; font-size: 13px">
-            Connection Status: {% if current_email %}
-            <span style="color: var(--accent-green); font-weight: bold"
-              >[ VERIFIED: {{ current_email }} ]</span
-            >
-            {% else %}
-            <span style="color: var(--accent-red); font-weight: bold"
-              >[ UNLINKED: 2FA DISABLED ]</span
-            >
-            {% endif %}
-          </div>
+              <div>
+                <div class="profile-grid">
+                  <div>
+                    <label class="profile-label">Username</label>
+                    <input type="text" name="username" required value="{{ username }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Full Name</label>
+                    <input type="text" name="full_name" placeholder="Your full name" value="{{ user_profile.get('full_name', '') if user_profile is defined and user_profile else '' }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Secure Email</label>
+                    <input type="email" name="email" placeholder="admin@secure-link.net" value="{{ current_email if current_email else '' }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Phone / Contact</label>
+                    <input type="text" name="phone" placeholder="Contact number" value="{{ user_profile.get('phone', '') if user_profile is defined and user_profile else '' }}" />
+                  </div>
+                  <div>
+                    <label class="profile-label">New Password</label>
+                    <input type="password" name="new_password" placeholder="Leave blank to keep current" autocomplete="new-password" />
+                  </div>
+                  <div>
+                    <label class="profile-label">Confirm Password</label>
+                    <input type="password" name="confirm_password" placeholder="Confirm new password" autocomplete="new-password" />
+                  </div>
+                </div>
+
+                <div class="profile-form-actions">
+                  <button type="submit">Save Profile Changes</button>
+                  <span class="profile-hint">
+                    Your login username updates immediately after saving.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </form>
         </div>
 
         <div
@@ -1669,9 +2551,170 @@
         </div>
       </div>
       {% endif %}
+
+      {% if logged_in %}
+      <div id="view-history" class="dashboard-grid" style="display: none">
+        <div class="card col-12">
+          <h3 class="card-title">My Report History</h3>
+          <p style="color: var(--text-muted); margin-top: -10px; margin-bottom: 20px">
+            These are the intelligence reports submitted under your account. Administrators still see full system records in the dashboard.
+          </p>
+          <div class="history-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Date / Time</th>
+                  <th>Sector</th>
+                  <th>Threat</th>
+                  <th>Status</th>
+                  <th>Priority</th>
+                  <th>Integrity</th>
+                  <th>Intel Summary</th>
+                  <th>File</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set my_reports = user_history_reports if user_history_reports is defined else [] %}
+                {% for report in my_reports %}
+                <tr>
+                  <td style="color: var(--text-muted); white-space: nowrap">{{ report.timestamp or report.updated_at or 'N/A' }}</td>
+                  <td><strong>{{ report.sector or 'Unknown' }}</strong></td>
+                  <td>
+                    <span class="threat-badge threat-{{ (report.threat_level or 'LOW')|lower }}">
+                      {{ report.threat_level or 'LOW' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="workflow-badge workflow-{{ (report.status or 'OPEN')|lower }}">
+                      {{ report.status or 'OPEN' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="priority-badge priority-{{ (report.priority or 'MEDIUM')|lower }}">
+                      {{ report.priority or 'MEDIUM' }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if report.status_flag == 'VERIFIED' %}
+                    <span class="status-badge status-verified">VERIFIED</span>
+                    {% else %}
+                    <span class="status-badge status-tampered">TAMPERED</span>
+                    {% endif %}
+                  </td>
+                  <td class="history-intel">{{ report.decrypted_text }}</td>
+                  <td>
+                    {% if report.attachment %}
+                    <a href="{{ report.attachment }}" target="_blank" class="osiris-btn small">VIEW</a>
+                    {% else %}
+                    <span style="color: var(--text-muted)">None</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr>
+                  <td colspan="8" class="history-empty">No report history found for your account.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card col-12">
+          <h3 class="card-title">My Activity / Audit Logs</h3>
+          <p style="color: var(--text-muted); margin-top: -10px; margin-bottom: 20px">
+            This shows audit log entries connected to your username, including login, logout, profile updates, and report transmissions.
+          </p>
+          <div class="history-terminal">
+            {% set my_logs = user_audit_logs if user_audit_logs is defined else [] %}
+            {% for log in my_logs %}
+            <div class="history-log-line">
+              <span class="history-log-time">[{{ log[0] }}]</span>
+              {% if 'CRITICAL' in log[1] or 'SECURITY ALERT' in log[1] %}
+              <span style="color: var(--accent-red); font-weight: bold">{{ log[1] }}</span>
+              {% elif 'WARNING' in log[1] %}
+              <span style="color: var(--accent-warning)">{{ log[1] }}</span>
+              {% else %}
+              <span style="color: var(--text-main)">{{ log[1] }}</span>
+              {% endif %}
+            </div>
+            {% else %}
+            <div class="history-empty">No audit logs found for your account yet.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
 
-    <div id="editModal" class="modal">
+    {% if logged_in and role == 'admin' %}
+    {% if not logged_in %}
+    <div id="registerModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <h3
+          style="
+            margin-top: 0;
+            color: var(--accent-blue);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+          "
+        >
+          Request Operative Access
+        </h3>
+        <p class="profile-hint" style="margin-bottom: 18px">
+          Submit your information to request an O.S.I.R.I.S. account. An administrator must approve or create your access before login.
+        </p>
+
+        <form action="/request_access" method="POST">
+          <label style="font-size: 12px; color: var(--text-muted)">Full Name</label>
+          <input
+            type="text"
+            name="full_name"
+            required
+            placeholder="Enter your full name"
+          />
+
+          <label style="font-size: 12px; color: var(--text-muted)">Preferred Username</label>
+          <input
+            type="text"
+            name="username"
+            required
+            placeholder="Choose a username"
+          />
+
+          <label style="font-size: 12px; color: var(--text-muted)">Email Address</label>
+          <input
+            type="email"
+            name="email"
+            required
+            placeholder="your@email.com"
+          />
+
+          <label style="font-size: 12px; color: var(--text-muted)">Reason for Access</label>
+          <textarea
+            name="reason"
+            rows="4"
+            required
+            placeholder="Briefly explain why access is needed..."
+          ></textarea>
+
+          <div style="display: flex; gap: 10px; margin-top: 15px">
+            <button type="submit">Submit Request</button>
+            <button
+              type="button"
+              class="btn-danger"
+              onclick="closeRegisterModal()"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div id="editModal" class="modal" style="display: none;">
       <div class="modal-content">
         <h3
           style="
@@ -1720,7 +2763,7 @@
       </div>
     </div>
 
-    <div id="editAgentModal" class="modal">
+    <div id="editAgentModal" class="modal" style="display: none;">
       <div class="modal-content">
         <h3
           style="
@@ -1812,6 +2855,7 @@
         </form>
       </div>
     </div>
+    {% endif %}
 
     {% if logged_in %}
     <div id="ai-chat-widget">
@@ -1852,6 +2896,38 @@
     {% endif %}
 
     <script>
+function openRegisterModal() {
+  const modal = document.getElementById("registerModal");
+  if (modal) {
+    modal.style.display = "flex";
+  }
+}
+
+function closeRegisterModal() {
+  const modal = document.getElementById("registerModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+
+window.addEventListener("click", function (event) {
+  const registerModal = document.getElementById("registerModal");
+  if (registerModal && event.target === registerModal) {
+    closeRegisterModal();
+  }
+});
+      function openProfilePage() {
+  /*
+    Use "settings" because your Profile page is currently using:
+    <div id="view-settings">
+  */
+  switchTab("settings");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth",
+  });
+}
       // 1. Matrix Decryption
       document.addEventListener("DOMContentLoaded", function () {
         const elements = document.querySelectorAll(".decryption-effect");
@@ -1949,12 +3025,38 @@
         });
       }
 
+
+
+      // 4B. OSIRIS Toolbar Search + Status Filter
+      document.addEventListener("DOMContentLoaded", function () {
+        const reportSearch = document.getElementById("reportSearch");
+        const statusFilter = document.getElementById("statusFilter");
+        const reportRows = document.querySelectorAll(".report-row");
+
+        function filterReportRows() {
+          const query = (reportSearch?.value || "").toLowerCase();
+          const selectedStatus = statusFilter?.value || "";
+
+          reportRows.forEach((row) => {
+            const searchable = (row.dataset.search || row.innerText || "").toLowerCase();
+            const status = row.dataset.status || "OPEN";
+            const matchesSearch = searchable.includes(query);
+            const matchesStatus = !selectedStatus || status === selectedStatus;
+            row.style.display = matchesSearch && matchesStatus ? "" : "none";
+          });
+        }
+
+        reportSearch?.addEventListener("input", filterReportRows);
+        statusFilter?.addEventListener("change", filterReportRows);
+      });
+
       // 5. Tabs
       function switchTab(tabName) {
         const views = [
           "dashboard",
           "analytics",
           "uplink",
+          "history",
           "forensics",
           "settings",
         ];
@@ -2218,7 +3320,25 @@
         }
       });
 
-      // 9. Edit Modal Logic (For Reports)
+      // 9. Request Access Modal Logic
+      function openRegisterModal() {
+        const modal = document.getElementById("registerModal");
+        if (modal) modal.style.display = "flex";
+      }
+
+      function closeRegisterModal() {
+        const modal = document.getElementById("registerModal");
+        if (modal) modal.style.display = "none";
+      }
+
+      window.addEventListener("click", function (event) {
+        const registerModal = document.getElementById("registerModal");
+        if (registerModal && event.target === registerModal) {
+          closeRegisterModal();
+        }
+      });
+
+      // 10. Edit Modal Logic (For Reports)
       function openEditModal(id, sector, threat, intel) {
         document.getElementById("edit-id").value = id;
         document.getElementById("edit-sector").value = sector;
@@ -2231,7 +3351,7 @@
         document.getElementById("editModal").style.display = "none";
       }
 
-      // NEW: Edit Modal Logic (For Agents)
+      // 11. Edit Modal Logic (For Agents)
       function openEditAgentModal(id, username) {
         document.getElementById("edit-agent-id").value = id;
         document.getElementById("edit-agent-username").value = username;
@@ -2243,7 +3363,29 @@
         document.getElementById("editAgentModal").style.display = "none";
       }
 
-      // 10. Toggle Password Visibility
+
+      // 12. Profile Photo Preview
+      function previewProfilePhoto(input) {
+        const preview = document.getElementById("profile-photo-preview");
+        if (!preview || !input.files || !input.files[0]) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          if (preview.tagName.toLowerCase() === "img") {
+            preview.src = e.target.result;
+          } else {
+            const img = document.createElement("img");
+            img.id = "profile-photo-preview";
+            img.src = e.target.result;
+            img.alt = "Profile Photo";
+            img.className = "profile-avatar-large";
+            preview.replaceWith(img);
+          }
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+
+      // 11. Toggle Password Visibility
       function togglePassword(inputId, iconId) {
         const pwdInput = document.getElementById(inputId);
         const eyeIcon = document.getElementById(iconId);
@@ -2335,5 +3477,60 @@
         });
       });
     </script>
+    <div id="registerModal" class="modal">
+  <div class="modal-content">
+    <h3
+      style="
+        margin-top: 0;
+        color: var(--accent-blue);
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 10px;
+      "
+    >
+      Request Operative Access
+    </h3>
+
+    <form action="/request_access" method="POST">
+      <label style="font-size: 12px; color: var(--text-muted)">Full Name</label>
+      <input
+        type="text"
+        name="full_name"
+        required
+        placeholder="Enter full name"
+      />
+
+      <label style="font-size: 12px; color: var(--text-muted)">Preferred Username</label>
+      <input
+        type="text"
+        name="username"
+        required
+        placeholder="Choose username"
+      />
+
+      <label style="font-size: 12px; color: var(--text-muted)">Email</label>
+      <input
+        type="email"
+        name="email"
+        required
+        placeholder="your@email.com"
+      />
+
+      <label style="font-size: 12px; color: var(--text-muted)">Reason for Access</label>
+      <textarea
+        name="reason"
+        rows="4"
+        required
+        placeholder="Explain why access is needed..."
+      ></textarea>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px">
+        <button type="submit">Submit Request</button>
+        <button type="button" class="btn-danger" onclick="closeRegisterModal()">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
   </body>
 </html>
