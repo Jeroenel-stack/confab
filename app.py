@@ -10,12 +10,12 @@ from supabase import create_client, Client
 import smtplib
 from email.mime.text import MIMEText
 from dotenv import load_dotenv
-import google.generativeai as genai
+# We are using the NEW modern SDK
+from google import genai 
 
 # ==========================================
 # 1. OPEN THE VAULT FIRST!
 # ==========================================
-# This MUST run before os.getenv() is called anywhere else!
 load_dotenv()
 
 app = Flask(__name__)
@@ -26,9 +26,8 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY")
 # ==========================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-    # UPDATED: Using the current-generation flash model to bypass the 404 error
-    ai_model = genai.GenerativeModel('gemini-2.5-flash') 
+    # Initialize the modern AI Client
+    ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 # ==========================================
 # 3. FILE UPLOAD CONFIGURATION
@@ -42,6 +41,10 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # ==========================================
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+# Safety check: Crash immediately if keys are missing
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise ValueError("Missing essential Supabase Environment Variables!")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -431,14 +434,25 @@ def api_chat():
         return {"reply": "SYSTEM ERROR: AI Core offline. API Key missing."}
 
     try:
-        # Give the AI its tactical persona before sending the user's question
+        # Give the AI its tactical persona
         tactical_prompt = f"You are OSIRIS, a highly advanced tactical AI assistant for a cybersecurity command center. Respond concisely, professionally, and with a slightly militaristic/cyber tone to the following query. Query: {user_message}"
         
-        response = ai_model.generate_content(tactical_prompt)
+        # CRITICAL FIX: Using the active Lite model to bypass the 20-request cap
+        response = ai_client.models.generate_content(
+            model='gemini-2.5-flash-lite',
+            contents=tactical_prompt
+        )
         return {"reply": response.text}
+        
     except Exception as e:
-        print(f"❌ CRITICAL AI ERROR: {e}") # <-- ADD THIS LINE
-        return {"reply": f"CONNECTION FAILED: Neural link severed."}
+        error_msg = str(e)
+        print(f"❌ CRITICAL AI ERROR: {error_msg}") 
+        
+        # Turn Rate Limits into a tactical warning
+        if "429" in error_msg or "quota" in error_msg.lower():
+            return {"reply": "⚠️ SYSTEM ALERT: Comm-link cooling down to prevent tracking. Please wait 15 seconds before next transmission."}
+            
+        return {"reply": "CONNECTION FAILED: Neural link severed."}
 
 if __name__ == '__main__':
     app.run(debug=True)
